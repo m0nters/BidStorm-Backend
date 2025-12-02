@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.taitrinh.online_auction.dto.category.CategoryResponse;
 import com.taitrinh.online_auction.dto.category.CreateCategoryRequest;
 import com.taitrinh.online_auction.entity.Category;
+import com.taitrinh.online_auction.mapper.CategoryMapper;
 import com.taitrinh.online_auction.repository.CategoryRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
     /**
      * Get all categories in hierarchical structure (2 levels: parent -> children)
@@ -26,7 +28,7 @@ public class CategoryService {
         List<Category> parentCategories = categoryRepository.findByParentIsNull();
 
         return parentCategories.stream()
-                .map(this::mapToResponseWithChildren)
+                .map(categoryMapper::toResponseWithChildren)
                 .toList();
     }
 
@@ -36,7 +38,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllParentCategories() {
         return categoryRepository.findByParentIsNull().stream()
-                .map(this::mapToResponse)
+                .map(categoryMapper::toResponse)
                 .toList();
     }
 
@@ -50,7 +52,7 @@ public class CategoryService {
         }
 
         return categoryRepository.findByParentId(parentId).stream()
-                .map(this::mapToResponse)
+                .map(categoryMapper::toResponse)
                 .toList();
     }
 
@@ -62,7 +64,7 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
-        return mapToResponseWithChildren(category);
+        return categoryMapper.toResponseWithChildren(category);
     }
 
     /**
@@ -99,7 +101,7 @@ public class CategoryService {
                 .build();
 
         Category savedCategory = categoryRepository.save(category);
-        return mapToResponse(savedCategory);
+        return categoryMapper.toResponse(savedCategory);
     }
 
     /**
@@ -156,7 +158,7 @@ public class CategoryService {
         category.setName(request.getName());
         category.setParent(newParent);
         Category updatedCategory = categoryRepository.save(category);
-        return mapToResponse(updatedCategory);
+        return categoryMapper.toResponse(updatedCategory);
     }
 
     /**
@@ -178,35 +180,5 @@ public class CategoryService {
         }
 
         categoryRepository.delete(category);
-    }
-
-    // Mapping helpers
-    private CategoryResponse mapToResponse(Category category) {
-        return CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .parentId(category.getParent() != null ? category.getParent().getId() : null)
-                .isParent(category.isParent())
-                .childrenCount(category.getChildren() != null ? category.getChildren().size() : 0)
-                .createdAt(category.getCreatedAt())
-                .build();
-    }
-
-    private CategoryResponse mapToResponseWithChildren(Category category) {
-        List<CategoryResponse> children = category.getChildren() != null
-                ? category.getChildren().stream()
-                        .map(this::mapToResponse)
-                        .toList()
-                : null;
-
-        return CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .parentId(category.getParent() != null ? category.getParent().getId() : null)
-                .isParent(category.isParent())
-                .childrenCount(category.getChildren() != null ? category.getChildren().size() : 0)
-                .children(children)
-                .createdAt(category.getCreatedAt())
-                .build();
     }
 }
