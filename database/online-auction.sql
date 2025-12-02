@@ -75,6 +75,87 @@ CREATE TABLE categories (
 
 CREATE INDEX idx_categories_parent ON categories(parent_id);
 
+INSERT INTO categories (name, parent_id) VALUES
+-- 1. Điện tử
+('Điện tử', NULL),
+
+('Điện thoại di động', 1),
+('Máy tính bảng', 1),
+('Laptop', 1),
+('Tai nghe & Loa', 1),
+('Máy ảnh & Máy quay', 1),
+('Tivi & Màn hình', 1),
+('Phụ kiện điện thoại', 1),
+('Đồng hồ thông minh', 1),
+
+-- 2. Thời trang & Phụ kiện
+('Thời trang & Phụ kiện', NULL),
+
+('Giày dép nam', 10),
+('Giày dép nữ', 10),
+('Túi xách & Ví', 10),
+('Đồng hồ thời trang', 10),
+('Trang sức', 10),
+('Quần áo nam', 10),
+('Quần áo nữ', 10),
+('Phụ kiện thời trang', 10),
+
+-- 3. Nhà cửa & Đời sống
+('Nhà cửa & Đời sống', NULL),
+
+('Nội thất phòng khách', 19),
+('Nội thất phòng ngủ', 19),
+('Đồ trang trí nhà cửa', 19),
+('Đồ gia dụng & Bếp', 19),
+('Đồ dùng phòng tắm', 19),
+('Cây cảnh & Vườn', 19),
+
+-- 4. Sức khỏe & Làm đẹp
+('Sức khỏe & Làm đẹp', NULL),
+
+('Mỹ phẩm', 26),
+('Chăm sóc da', 26),
+('Chăm sóc tóc', 26),
+('Nước hoa', 26),
+('Thực phẩm chức năng', 26),
+
+-- 5. Thể thao & Dã ngoại
+('Thể thao & Dã ngoại', NULL),
+
+('Xe đạp & Phụ kiện', 32),
+('Dụng cụ tập gym', 32),
+('Cắm trại & Dã ngoại', 32),
+('Câu cá', 32),
+('Bóng đá & Bóng rổ', 32),
+
+-- 6. Sách & Văn phòng phẩm
+('Sách & Văn phòng phẩm', NULL),
+
+('Sách văn học', 38),
+('Sách kinh doanh - kinh tế', 38),
+('Sách thiếu nhi', 38),
+('Truyện tranh - Manga', 38),
+('Sách ngoại ngữ', 38),
+('Văn phòng phẩm', 38),
+
+-- 7. Ô tô & Xe máy
+('Ô tô & Xe máy', NULL),
+
+('Xe máy', 45),
+('Phụ tùng xe máy', 45),
+('Phụ kiện ô tô', 45),
+('Mũ bảo hiểm', 45),
+
+-- 8. Sở thích & Sưu tầm
+('Sở thích & Sưu tầm', NULL),
+
+('Mô hình - Figure', 50),
+('Đồ chơi - Board game', 50),
+('Nhạc cụ', 50),
+('Tem - Tiền cổ', 50),
+('Đồ cổ & Mỹ nghệ', 50),
+('Thú cưng & Phụ kiện', 50);
+
 -- 4. Products
 CREATE TABLE products (
     id                    BIGSERIAL PRIMARY KEY,

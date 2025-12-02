@@ -1,13 +1,10 @@
 package com.taitrinh.online_auction.entity;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -77,10 +73,6 @@ public class OrderCompletion {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private ZonedDateTime updatedAt;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<OrderChatMessage> chatMessages = new ArrayList<>();
 
     public enum PaymentStatus {
         PENDING, PAID, REFUNDED, CANCELLED
