@@ -19,3 +19,13 @@ spring:
 
 server:
   port: ${PORT}
+
+# JWT Configuration
+jwt:
+  secret: D(c(J^1`S4:S_be}p}'nK==UVO8I~2!/rQmH+U2nl2E7k<jN7#
+  access-token-expiration: 3600000 # 1 hour in milliseconds
+  refresh-token-expiration: 604800000 # 7 days in milliseconds
+
+# OTP Configuration
+otp:
+  expiration-minutes: 10
