@@ -75,6 +75,10 @@ public class Product {
     @Builder.Default
     private Boolean autoExtend = true;
 
+    @Column(name = "allow_unrated_bidders", nullable = false)
+    @Builder.Default
+    private Boolean allowUnratedBidders = false;
+
     @Column(name = "start_time", nullable = false)
     @Builder.Default
     private ZonedDateTime startTime = ZonedDateTime.now();

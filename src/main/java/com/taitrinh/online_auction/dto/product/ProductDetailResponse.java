@@ -47,6 +47,10 @@ public class ProductDetailResponse {
     @JsonProperty("isAutoExtend")
     private Boolean isAutoExtend;
 
+    @Schema(description = "Allow unrated bidders to participate", example = "false")
+    @JsonProperty("allowUnratedBidders")
+    private Boolean allowUnratedBidders;
+
     @Schema(description = "Category ID", example = "5")
     private Integer categoryId;
 

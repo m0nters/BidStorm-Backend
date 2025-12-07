@@ -171,6 +171,7 @@ CREATE TABLE products (
     price_step            DECIMAL(15,2) NOT NULL CHECK (price_step > 0),
     
     auto_extend           BOOLEAN NOT NULL DEFAULT true,
+    allow_unrated_bidders BOOLEAN NOT NULL DEFAULT false,
     
     start_time            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     end_time              TIMESTAMPTZ NOT NULL,
@@ -335,3 +336,4 @@ INSERT INTO system_configs (key, value, description) VALUES
     ('auto_extend_trigger_min', '5', 'Số phút trước khi kết thúc để tự động gia hạn'),
     ('auto_extend_by_min', '10', 'Số phút gia hạn thêm khi có bid mới'),
     ('new_product_highlight_min', '60', 'Số phút để đánh dấu sản phẩm là mới'),
+    ('seller_temp_duration_days', '7', 'Thời gian seller được bán tính từ khi được cấp quyền seller')

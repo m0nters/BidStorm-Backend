@@ -73,4 +73,8 @@ public class ProductListResponse {
     @Schema(description = "Whether product has buy now option", example = "true")
     @JsonProperty("hasBuyNow")
     private Boolean hasBuyNow;
+
+    @Schema(description = "Allow unrated bidders to participate", example = "false")
+    @JsonProperty("allowUnratedBidders")
+    private Boolean allowUnratedBidders;
 }

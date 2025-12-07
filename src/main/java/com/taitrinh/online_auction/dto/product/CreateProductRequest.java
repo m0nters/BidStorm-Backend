@@ -62,6 +62,10 @@ public class CreateProductRequest {
     @Schema(description = "Enable auto-extend when bid placed near end time", example = "true")
     private Boolean autoExtend;
 
+    @NotNull(message = "Allow unrated bidders setting is required")
+    @Schema(description = "Allow bidders with no rating or <80% rating to bid on this product", example = "false")
+    private Boolean allowUnratedBidders;
+
     @NotEmpty(message = "At least 3 images are required")
     @Size(min = 3, message = "At least 3 images are required")
     @Valid

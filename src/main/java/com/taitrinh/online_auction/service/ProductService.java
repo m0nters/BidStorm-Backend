@@ -23,14 +23,12 @@ import com.taitrinh.online_auction.entity.Category;
 import com.taitrinh.online_auction.entity.DescriptionLog;
 import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.ProductImage;
-import com.taitrinh.online_auction.entity.SystemConfig;
 import com.taitrinh.online_auction.entity.User;
 import com.taitrinh.online_auction.mapper.ProductMapper;
 import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CategoryRepository;
 import com.taitrinh.online_auction.repository.DescriptionLogRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
-import com.taitrinh.online_auction.repository.SystemConfigRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -43,14 +41,11 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final BidHistoryRepository bidHistoryRepository;
-    private final SystemConfigRepository systemConfigRepository;
+    private final ConfigService configService;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final DescriptionLogRepository descriptionLogRepository;
     private final ProductMapper productMapper;
-
-    // Default values for system configs
-    private static final Integer DEFAULT_NEW_PRODUCT_HIGHLIGHT_MIN = 60; // 60 minutes
 
     /**
      * Get top 5 products ending soon
@@ -60,7 +55,7 @@ public class ProductService {
         log.debug("Getting top 5 products ending soon");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5EndingSoon(pageable);
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
                 .map(product -> productMapper.toListResponse(product, highlightMin))
                 .toList();
@@ -74,7 +69,7 @@ public class ProductService {
         log.debug("Getting top 5 products by bid count");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5ByBidCount(pageable);
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
                 .map(product -> productMapper.toListResponse(product, highlightMin))
                 .toList();
@@ -88,7 +83,7 @@ public class ProductService {
         log.debug("Getting top 5 products by price");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5ByPrice(pageable);
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
                 .map(product -> productMapper.toListResponse(product, highlightMin))
                 .toList();
@@ -108,7 +103,7 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<Product> productPage = productRepository.findByCategoryIdOrParentId(categoryId, pageable);
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
 
         return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
     }
@@ -148,7 +143,7 @@ public class ProductService {
             productPage = productRepository.findAll(pageable);
         }
 
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
     }
 
@@ -165,7 +160,7 @@ public class ProductService {
         // Increment view count (in a separate transaction to avoid locking)
         incrementViewCount(id);
 
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return productMapper.toDetailResponse(product, highlightMin);
     }
 
@@ -178,7 +173,7 @@ public class ProductService {
 
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findRelatedProducts(categoryId, productId, pageable);
-        Integer highlightMin = getNewProductHighlightMin();
+        Integer highlightMin = configService.getNewProductHighlightMin();
 
         return products.stream()
                 .map(product -> productMapper.toListResponse(product, highlightMin))
@@ -213,21 +208,6 @@ public class ProductService {
         } catch (Exception e) {
             log.error("Error incrementing view count for product: {}", productId, e);
             // Don't throw exception, just log it
-        }
-    }
-
-    /**
-     * Get new product highlight duration from system config
-     */
-    private Integer getNewProductHighlightMin() {
-        try {
-            return systemConfigRepository.findByKey(SystemConfig.NEW_PRODUCT_HIGHLIGHT_MIN)
-                    .map(SystemConfig::getIntValue)
-                    .orElse(DEFAULT_NEW_PRODUCT_HIGHLIGHT_MIN);
-        } catch (Exception e) {
-            log.warn("Error getting new product highlight config, using default: {}",
-                    DEFAULT_NEW_PRODUCT_HIGHLIGHT_MIN, e);
-            return DEFAULT_NEW_PRODUCT_HIGHLIGHT_MIN;
         }
     }
 
@@ -279,6 +259,7 @@ public class ProductService {
                 .buyNowPrice(request.getBuyNowPrice())
                 .priceStep(request.getPriceStep())
                 .autoExtend(request.getAutoExtend())
+                .allowUnratedBidders(request.getAllowUnratedBidders())
                 .endTime(request.getEndTime())
                 .bidCount(0)
                 .viewCount(0)

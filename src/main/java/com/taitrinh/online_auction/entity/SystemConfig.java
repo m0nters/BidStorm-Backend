@@ -41,7 +41,6 @@ public class SystemConfig {
     public static final String AUTO_EXTEND_TRIGGER_MIN = "auto_extend_trigger_min";
     public static final String AUTO_EXTEND_BY_MIN = "auto_extend_by_min";
     public static final String NEW_PRODUCT_HIGHLIGHT_MIN = "new_product_highlight_min";
-    public static final String ALLOW_UNRATED_BIDDERS = "allow_unrated_bidders";
     public static final String SELLER_TEMP_DURATION_DAYS = "seller_temp_duration_days";
 
     // Helper methods
