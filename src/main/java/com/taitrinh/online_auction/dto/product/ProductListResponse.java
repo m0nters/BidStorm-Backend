@@ -24,6 +24,9 @@ public class ProductListResponse {
     @Schema(description = "Product title", example = "iPhone 15 Pro Max 256GB")
     private String title;
 
+    @Schema(description = "Product slug", example = "iphone-15-pro-max-256gb")
+    private String slug;
+
     @Schema(description = "Main thumbnail image URL", example = "https://example.com/images/product1.jpg")
     private String thumbnailUrl;
 

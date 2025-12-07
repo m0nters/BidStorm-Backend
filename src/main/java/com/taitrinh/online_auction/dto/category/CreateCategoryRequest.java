@@ -20,6 +20,10 @@ public class CreateCategoryRequest {
     @Schema(description = "Category name", example = "Điện tử")
     private String name;
 
+    @Size(max = 500, message = "Slug must not exceed 500 characters")
+    @Schema(description = "Custom slug (optional, auto-generated from name if not provided)", example = "dien-tu-custom")
+    private String slug;
+
     @Schema(description = "Parent category ID for sub-category (null for top-level category)", example = "1")
     private Integer parentId;
 }

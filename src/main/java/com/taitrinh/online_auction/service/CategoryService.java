@@ -10,6 +10,7 @@ import com.taitrinh.online_auction.dto.category.CreateCategoryRequest;
 import com.taitrinh.online_auction.entity.Category;
 import com.taitrinh.online_auction.mapper.CategoryMapper;
 import com.taitrinh.online_auction.repository.CategoryRepository;
+import com.taitrinh.online_auction.util.SlugUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -95,8 +96,30 @@ public class CategoryService {
             throw new RuntimeException("Category with name '" + request.getName() + "' already exists at this level");
         }
 
+        // Generate slug
+        String slug;
+        if (request.getSlug() != null && !request.getSlug().trim().isEmpty()) {
+            // Admin provided custom slug - use it
+            slug = SlugUtils.toSlug(request.getSlug());
+        } else {
+            // Auto-generate from name
+            slug = SlugUtils.toSlug(request.getName());
+        }
+
+        // For child categories, prepend parent slug
+        if (parent != null) {
+            slug = parent.getSlug() + "/" + slug;
+        } else {
+            // For parent categories, add /danh-muc/ prefix
+            slug = "danh-muc/" + slug;
+        }
+
+        // Ensure slug uniqueness
+        slug = SlugUtils.makeUnique(slug, categoryRepository::existsBySlug);
+
         Category category = Category.builder()
                 .name(request.getName())
+                .slug(slug)
                 .parent(parent)
                 .build();
 

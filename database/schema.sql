@@ -7,7 +7,6 @@ CREATE TABLE roles (
     id   SMALLINT PRIMARY KEY,
     name VARCHAR(20) UNIQUE NOT NULL
 );
-INSERT INTO roles VALUES (1,'admin'), (2,'seller'), (3,'bidder');
 
 -- 2. Users
 CREATE TABLE users (
@@ -64,97 +63,18 @@ CREATE TABLE refresh_tokens (
 CREATE INDEX idx_refresh_tokens_user   ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_token  ON refresh_tokens(token) WHERE revoked_at IS NULL;
 
--- 3. Categories (2-level only, no slug needed)
+-- 3. Categories (2-level only)
 CREATE TABLE categories (
     id         SERIAL PRIMARY KEY,
     name       VARCHAR(255) NOT NULL,
+    slug       VARCHAR(500) UNIQUE NOT NULL,
     parent_id  INTEGER REFERENCES categories(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(name, parent_id)
 );
 
 CREATE INDEX idx_categories_parent ON categories(parent_id);
-
-INSERT INTO categories (name, parent_id) VALUES
--- 1. Điện tử
-('Điện tử', NULL),
-
-('Điện thoại di động', 1),
-('Máy tính bảng', 1),
-('Laptop', 1),
-('Tai nghe & Loa', 1),
-('Máy ảnh & Máy quay', 1),
-('Tivi & Màn hình', 1),
-('Phụ kiện điện thoại', 1),
-('Đồng hồ thông minh', 1),
-
--- 2. Thời trang & Phụ kiện
-('Thời trang & Phụ kiện', NULL),
-
-('Giày dép nam', 10),
-('Giày dép nữ', 10),
-('Túi xách & Ví', 10),
-('Đồng hồ thời trang', 10),
-('Trang sức', 10),
-('Quần áo nam', 10),
-('Quần áo nữ', 10),
-('Phụ kiện thời trang', 10),
-
--- 3. Nhà cửa & Đời sống
-('Nhà cửa & Đời sống', NULL),
-
-('Nội thất phòng khách', 19),
-('Nội thất phòng ngủ', 19),
-('Đồ trang trí nhà cửa', 19),
-('Đồ gia dụng & Bếp', 19),
-('Đồ dùng phòng tắm', 19),
-('Cây cảnh & Vườn', 19),
-
--- 4. Sức khỏe & Làm đẹp
-('Sức khỏe & Làm đẹp', NULL),
-
-('Mỹ phẩm', 26),
-('Chăm sóc da', 26),
-('Chăm sóc tóc', 26),
-('Nước hoa', 26),
-('Thực phẩm chức năng', 26),
-
--- 5. Thể thao & Dã ngoại
-('Thể thao & Dã ngoại', NULL),
-
-('Xe đạp & Phụ kiện', 32),
-('Dụng cụ tập gym', 32),
-('Cắm trại & Dã ngoại', 32),
-('Câu cá', 32),
-('Bóng đá & Bóng rổ', 32),
-
--- 6. Sách & Văn phòng phẩm
-('Sách & Văn phòng phẩm', NULL),
-
-('Sách văn học', 38),
-('Sách kinh doanh - kinh tế', 38),
-('Sách thiếu nhi', 38),
-('Truyện tranh - Manga', 38),
-('Sách ngoại ngữ', 38),
-('Văn phòng phẩm', 38),
-
--- 7. Ô tô & Xe máy
-('Ô tô & Xe máy', NULL),
-
-('Xe máy', 45),
-('Phụ tùng xe máy', 45),
-('Phụ kiện ô tô', 45),
-('Mũ bảo hiểm', 45),
-
--- 8. Sở thích & Sưu tầm
-('Sở thích & Sưu tầm', NULL),
-
-('Mô hình - Figure', 50),
-('Đồ chơi - Board game', 50),
-('Nhạc cụ', 50),
-('Tem - Tiền cổ', 50),
-('Đồ cổ & Mỹ nghệ', 50),
-('Thú cưng & Phụ kiện', 50);
+CREATE INDEX idx_categories_slug ON categories(slug);
 
 -- 4. Products
 CREATE TABLE products (
@@ -163,6 +83,7 @@ CREATE TABLE products (
     category_id           INTEGER NOT NULL REFERENCES categories(id),
 	
     title                 VARCHAR(255) NOT NULL,
+    slug                  VARCHAR(500) UNIQUE NOT NULL,
     description           TEXT NOT NULL,
     
     starting_price        DECIMAL(15,2) NOT NULL CHECK (starting_price > 0),
@@ -195,6 +116,7 @@ CREATE TABLE products (
 
 -- Full-text search indexes
 CREATE INDEX idx_products_fts          ON products USING GIN(search_vector);
+CREATE INDEX idx_products_slug         ON products(slug);
 CREATE INDEX idx_products_end_time     ON products(end_time ASC);
 CREATE INDEX idx_products_created      ON products(created_at DESC);
 CREATE INDEX idx_products_price        ON products(current_price);
@@ -330,10 +252,3 @@ CREATE TABLE system_configs (
     description TEXT,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- Default system configs
-INSERT INTO system_configs (key, value, description) VALUES
-    ('auto_extend_trigger_min', '5', 'Số phút trước khi kết thúc để tự động gia hạn'),
-    ('auto_extend_by_min', '10', 'Số phút gia hạn thêm khi có bid mới'),
-    ('new_product_highlight_min', '60', 'Số phút để đánh dấu sản phẩm là mới'),
-    ('seller_temp_duration_days', '7', 'Thời gian seller được bán tính từ khi được cấp quyền seller')

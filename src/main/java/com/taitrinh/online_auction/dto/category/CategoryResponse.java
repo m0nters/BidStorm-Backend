@@ -25,6 +25,9 @@ public class CategoryResponse {
     @Schema(description = "Category name", example = "Điện tử")
     private String name;
 
+    @Schema(description = "Category slug", example = "dien-tu")
+    private String slug;
+
     @Schema(description = "Parent category ID (null if top-level)", example = "null")
     private Integer parentId;
 

@@ -41,6 +41,9 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, unique = true, length = 500)
+    private String slug;
+
     @ManyToOne
     @JoinColumn(name = "parent_id")
     private Category parent;
@@ -50,7 +53,7 @@ public class Category {
     private List<Category> children = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp with time zone default current_timestamp")
     private ZonedDateTime createdAt;
 
     // Helper methods

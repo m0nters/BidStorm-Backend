@@ -65,4 +65,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // Count active products by category
         @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId AND p.isEnded = false")
         long countByCategoryId(@Param("categoryId") Integer categoryId);
+
+        // Slug-related methods
+        Optional<Product> findBySlug(String slug);
+
+        boolean existsBySlug(String slug);
 }

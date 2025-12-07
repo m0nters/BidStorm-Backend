@@ -32,4 +32,9 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     // Check if category has products
     @Query("SELECT COUNT(p) > 0 FROM Product p WHERE p.category.id = :categoryId")
     boolean hasProducts(@Param("categoryId") Integer categoryId);
+
+    // Slug-related methods
+    Optional<Category> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
 }

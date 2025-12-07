@@ -30,6 +30,7 @@ import com.taitrinh.online_auction.repository.CategoryRepository;
 import com.taitrinh.online_auction.repository.DescriptionLogRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.util.SlugUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -248,11 +249,16 @@ public class ProductService {
             throw new RuntimeException("Only one image can be marked as primary");
         }
 
+        // Generate slug from title with /san-pham/ prefix
+        String slug = "san-pham/" + SlugUtils.toSlug(request.getTitle());
+        slug = SlugUtils.makeUnique(slug, productRepository::existsBySlug);
+
         // Create product entity
         Product product = Product.builder()
                 .seller(seller)
                 .category(category)
                 .title(request.getTitle())
+                .slug(slug)
                 .description(request.getDescription())
                 .startingPrice(request.getStartingPrice())
                 .currentPrice(request.getStartingPrice()) // Initially same as starting price
