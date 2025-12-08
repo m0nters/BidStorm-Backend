@@ -3,8 +3,6 @@ package com.taitrinh.online_auction.dto.product;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +33,12 @@ public class ProductListResponse {
 
     @Schema(description = "Buy now price (if available)", example = "30000000")
     private BigDecimal buyNowPrice;
+
+    @Schema(description = "Allow unrated bidders to participate", example = "false")
+    private Boolean allowUnratedBidders;
+
+    @Schema(description = "Auto extend auction", example = "true")
+    private boolean autoExtend;
 
     @Schema(description = "Category ID", example = "5")
     private Integer categoryId;
@@ -70,14 +74,8 @@ public class ProductListResponse {
     private ZonedDateTime endTime;
 
     @Schema(description = "Whether product is newly posted (within N minutes)", example = "true")
-    @JsonProperty("isNew")
     private Boolean isNew;
 
     @Schema(description = "Whether product has buy now option", example = "true")
-    @JsonProperty("hasBuyNow")
     private Boolean hasBuyNow;
-
-    @Schema(description = "Allow unrated bidders to participate", example = "false")
-    @JsonProperty("allowUnratedBidders")
-    private Boolean allowUnratedBidders;
 }
