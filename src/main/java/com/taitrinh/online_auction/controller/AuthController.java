@@ -1,9 +1,13 @@
 package com.taitrinh.online_auction.controller;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.auth.LoginRequest;
 import com.taitrinh.online_auction.dto.auth.LoginResponse;
-import com.taitrinh.online_auction.dto.auth.RefreshTokenRequest;
 import com.taitrinh.online_auction.dto.auth.RegisterRequest;
 import com.taitrinh.online_auction.dto.auth.VerifyOtpRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
@@ -27,15 +30,26 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Authentication", description = "User authentication and registration endpoints")
+@Slf4j
 public class AuthController {
 
         private final AuthService authService;
+
+        @Value("${jwt.refresh-token-expiration}")
+        private Long refreshTokenExpiration;
+
+        @Value("${cookie.secure}")
+        private Boolean cookieSecure;
+
+        @Value("${cookie.same-site}")
+        private String cookieSameSite;
 
         @PostMapping("/register")
         @Operation(summary = "Register a new user", description = "Register a new bidder account with email verification. Password must be at least 8 characters with uppercase, lowercase, number, and special character.")
@@ -51,25 +65,44 @@ public class AuthController {
         }
 
         @PostMapping("/login")
-        @Operation(summary = "User login", description = "Authenticate user and receive JWT access token and refresh token")
+        @Operation(summary = "User login", description = "Authenticate user and receive JWT access token. Refresh token is set as httpOnly cookie.")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login successful"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials or account inactive")
         })
         public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
                 LoginResponse response = authService.login(request);
-                return ResponseEntity.ok(ApiResponse.ok(response, "Login successful"));
+
+                // Create httpOnly cookie for refresh token
+                ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", response.getRefreshToken())
+                                .httpOnly(true)
+                                .secure(cookieSecure)
+                                .path("/")
+                                .maxAge(refreshTokenExpiration / 1000) // Convert milliseconds to seconds
+                                .sameSite(cookieSameSite)
+                                .build();
+
+                // Remove refresh token from response body (it's now in cookie)
+                response.setRefreshToken(null);
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                                .body(ApiResponse.ok(response, "Login successful"));
         }
 
         @PostMapping("/refresh")
-        @Operation(summary = "Refresh access token", description = "Generate a new access token using a valid refresh token")
+        @Operation(summary = "Refresh access token", description = "Generate a new access token using the refresh token from httpOnly cookie")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
         })
         public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(
-                        @Valid @RequestBody RefreshTokenRequest request) {
-                LoginResponse response = authService.refreshToken(request.getRefreshToken());
+                        @CookieValue(name = "refreshToken", required = true) String refreshToken) {
+                LoginResponse response = authService.refreshToken(refreshToken);
+
+                // Refresh token remains in the cookie, so remove it from response body
+                response.setRefreshToken(null);
+
                 return ResponseEntity.ok(ApiResponse.ok(response, "Token refreshed successfully"));
         }
 
