@@ -109,9 +109,6 @@ public class CategoryService {
         // For child categories, prepend parent slug
         if (parent != null) {
             slug = parent.getSlug() + "/" + slug;
-        } else {
-            // For parent categories, add /danh-muc/ prefix
-            slug = "danh-muc/" + slug;
         }
 
         // Ensure slug uniqueness

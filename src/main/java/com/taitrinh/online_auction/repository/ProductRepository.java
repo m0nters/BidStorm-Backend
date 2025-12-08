@@ -16,15 +16,24 @@ import com.taitrinh.online_auction.entity.Product;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
         // Top 5 products ending soon (not ended, sorted by end_time ascending)
-        @Query("SELECT p FROM Product p WHERE p.endTime > CURRENT_TIMESTAMP ORDER BY p.endTime ASC")
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "WHERE p.endTime > CURRENT_TIMESTAMP ORDER BY p.endTime ASC")
         List<Product> findTop5EndingSoon(Pageable pageable);
 
         // Top 5 products with most bids (sorted by bid_count descending)
-        @Query("SELECT p FROM Product p WHERE p.isEnded = false ORDER BY p.bidCount DESC")
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "WHERE p.isEnded = false ORDER BY p.bidCount DESC")
         List<Product> findTop5ByBidCount(Pageable pageable);
 
         // Top 5 products with highest price (sorted by current_price descending)
-        @Query("SELECT p FROM Product p WHERE p.isEnded = false ORDER BY p.currentPrice DESC")
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "WHERE p.isEnded = false ORDER BY p.currentPrice DESC")
         List<Product> findTop5ByPrice(Pageable pageable);
 
         // Find products by category with pagination
@@ -51,7 +60,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // Find product by id with all related data eagerly loaded
         @Query("SELECT p FROM Product p " +
                         "LEFT JOIN FETCH p.seller " +
-                        "LEFT JOIN FETCH p.category " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
                         "LEFT JOIN FETCH p.highestBidder " +
                         "LEFT JOIN FETCH p.images " +
                         "WHERE p.id = :id")
@@ -67,7 +77,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         long countByCategoryId(@Param("categoryId") Integer categoryId);
 
         // Slug-related methods
-        Optional<Product> findBySlug(String slug);
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.seller " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "LEFT JOIN FETCH p.highestBidder " +
+                        "LEFT JOIN FETCH p.images " +
+                        "WHERE p.slug = :slug")
+        Optional<Product> findBySlug(@Param("slug") String slug);
 
         boolean existsBySlug(String slug);
 }

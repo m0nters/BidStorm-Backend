@@ -116,8 +116,8 @@ public class ProductController {
                                 "Products search completed successfully"));
         }
 
-        @GetMapping("/{id}")
-        @Operation(summary = "Get product details", description = "Retrieve complete information about a specific product including images, "
+        @GetMapping("/id/{id}")
+        @Operation(summary = "Get product details by ID", description = "Retrieve complete information about a specific product including images, "
                         +
                         "seller info, highest bidder info, and description logs")
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(
@@ -128,14 +128,24 @@ public class ProductController {
                                 "Product details retrieved successfully"));
         }
 
+        @GetMapping("/slug/{slug}")
+        @Operation(summary = "Get product details by slug", description = "Retrieve complete information about a specific product including images, "
+                        +
+                        "seller info, highest bidder info, and description logs")
+        public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetailBySlug(
+                        @Parameter(description = "Product slug", example = "iphone-15-pro-max") @PathVariable String slug) {
+
+                ProductDetailResponse product = productService.getProductDetailBySlug(slug);
+                return ResponseEntity.ok(ApiResponse.ok(product,
+                                "Product details retrieved successfully"));
+        }
+
         @GetMapping("/{id}/related")
         @Operation(summary = "Get related products", description = "Get 5 other products in the same category (excluding current product)")
         public ResponseEntity<ApiResponse<List<ProductListResponse>>> getRelatedProducts(
-                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id,
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
 
-                        @Parameter(description = "Category ID", example = "5") @RequestParam Integer categoryId) {
-
-                List<ProductListResponse> products = productService.getRelatedProducts(id, categoryId);
+                List<ProductListResponse> products = productService.getRelatedProducts(id);
                 return ResponseEntity.ok(ApiResponse.ok(products,
                                 "Related products retrieved successfully"));
         }

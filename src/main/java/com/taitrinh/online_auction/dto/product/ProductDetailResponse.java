@@ -25,6 +25,9 @@ public class ProductDetailResponse {
     @Schema(description = "Product title", example = "iPhone 15 Pro Max 256GB")
     private String title;
 
+    @Schema(description = "Product slug", example = "iphone-15-pro-max-256gb")
+    private String slug;
+
     @Schema(description = "Product description (full HTML content)", example = "<p>Brand new iPhone...</p>")
     private String description;
 
@@ -57,8 +60,14 @@ public class ProductDetailResponse {
     @Schema(description = "Category name", example = "Điện thoại di động")
     private String categoryName;
 
+    @Schema(description = "Category slug", example = "dien-tu/dien-thoai-di-dong")
+    private String categorySlug;
+
     @Schema(description = "Parent category name (if exists)", example = "Điện tử")
     private String parentCategoryName;
+
+    @Schema(description = "Parent category slug (if exists)", example = "dien-tu")
+    private String parentCategorySlug;
 
     @Schema(description = "Seller information")
     private UserBasicInfo seller;

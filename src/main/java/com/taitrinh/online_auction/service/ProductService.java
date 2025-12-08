@@ -150,6 +150,8 @@ public class ProductService {
 
     /**
      * Get product detail by ID
+     * For testing backend purpose only, in production, we use the service below
+     * (by slug)
      */
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long id) {
@@ -166,18 +168,42 @@ public class ProductService {
     }
 
     /**
+     * Get product detail by slug
+     */
+    @Transactional(readOnly = true)
+    public ProductDetailResponse getProductDetailBySlug(String slug) {
+        log.debug("Getting product detail for slug: {}", slug);
+
+        Product product = productRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Product not found with slug: " + slug));
+
+        // Increment view count (in a separate transaction to avoid locking)
+        incrementViewCount(product.getId());
+
+        Integer highlightMin = configService.getNewProductHighlightMin();
+        return productMapper.toDetailResponse(product, highlightMin);
+    }
+
+    /**
      * Get related products in the same category (excluding current product)
      */
     @Transactional(readOnly = true)
-    public List<ProductListResponse> getRelatedProducts(Long productId, Integer categoryId) {
-        log.debug("Getting related products for product: {} in category: {}", productId, categoryId);
+    public List<ProductListResponse> getRelatedProducts(Long productId) {
+        log.debug("Getting related products for product: {}", productId);
+
+        // Fetch the product to get its category
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+
+        Integer categoryId = product.getCategory().getId();
+        log.debug("Found category: {} for product: {}", categoryId, productId);
 
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findRelatedProducts(categoryId, productId, pageable);
         Integer highlightMin = configService.getNewProductHighlightMin();
 
         return products.stream()
-                .map(product -> productMapper.toListResponse(product, highlightMin))
+                .map(p -> productMapper.toListResponse(p, highlightMin))
                 .toList();
     }
 
@@ -249,8 +275,7 @@ public class ProductService {
             throw new RuntimeException("Only one image can be marked as primary");
         }
 
-        // Generate slug from title with /san-pham/ prefix
-        String slug = "san-pham/" + SlugUtils.toSlug(request.getTitle());
+        String slug = SlugUtils.toSlug(request.getTitle());
         slug = SlugUtils.makeUnique(slug, productRepository::existsBySlug);
 
         // Create product entity
