@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the complete authentication and authorization system implemented for the Online Auction platform. The system uses JWT (JSON Web Tokens) for stateless authentication with bcrypt password hashing.
+This document describes the complete authentication and authorization system implemented for an online auction platform - BidStorm. The system uses JWT (JSON Web Tokens) for stateless authentication with bcrypt password hashing.
 
 ## Architecture
 

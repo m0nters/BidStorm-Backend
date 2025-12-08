@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "Online Auction API", version = "1.0", description = "RESTful API for Online Auction Platform", contact = @Contact(name = "Online Auction Team", email = "support@onlineauction.com")), servers = {
+@OpenAPIDefinition(info = @Info(title = "BidStorm API", version = "1.0", description = "RESTful API for an online auction platform - BidStorm", contact = @Contact(name = "BidStorm Team", email = "support@bidstorm.com")), servers = {
         @Server(description = "Local Development Server", url = "http://localhost:${server.port}")
 })
 @SecurityScheme(name = "Bearer Authentication", type = SecuritySchemeType.HTTP, bearerFormat = "JWT", scheme = "bearer", in = SecuritySchemeIn.HEADER, description = "JWT authentication token. Use the access token received from login endpoint.")

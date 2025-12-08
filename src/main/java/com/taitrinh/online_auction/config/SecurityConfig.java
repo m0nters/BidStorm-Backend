@@ -46,10 +46,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
-                        // Public product endpoints (guest access)
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-
                         // Seller endpoints - require SELLER role
                         .requestMatchers(HttpMethod.POST, "/api/products").hasRole("SELLER")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("SELLER")
