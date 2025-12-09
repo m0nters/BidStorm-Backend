@@ -46,6 +46,9 @@ public class ProductListResponse {
     @Schema(description = "Category name", example = "Điện thoại di động")
     private String categoryName;
 
+    @Schema(description = "Category slug", example = "dien-thoai-di-dong")
+    private String categorySlug;
+
     @Schema(description = "Seller ID", example = "10")
     private Long sellerId;
 

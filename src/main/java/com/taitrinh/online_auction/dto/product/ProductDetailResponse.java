@@ -72,11 +72,17 @@ public class ProductDetailResponse {
     @Schema(description = "Seller information")
     private UserBasicInfo seller;
 
-    @Schema(description = "Highest bidder information (if any)")
-    private UserBasicInfo highestBidder;
+    @Schema(description = "Highest bidder name (masked)", example = "****Khoa")
+    private String highestBidderName;
 
-    @Schema(description = "Winner information (if auction ended)")
-    private UserBasicInfo winner;
+    @Schema(description = "Highest bidder rating percentage", example = "90.0")
+    private Double highestBidderRating;
+
+    @Schema(description = "Winner name (masked)", example = "****John")
+    private String winnerName;
+
+    @Schema(description = "Winner rating percentage", example = "85.5")
+    private Double winnerRating;
 
     @Schema(description = "Number of bids", example = "25")
     private Integer bidCount;
