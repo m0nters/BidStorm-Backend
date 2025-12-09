@@ -249,6 +249,7 @@ public class AuthService {
     private void saveRefreshToken(User user, String token) {
         // Delete existing refresh token for this user
         refreshTokenRepository.deleteByUserId(user.getId());
+        log.info("Delete existing refresh token for user: {}", user.getId());
 
         // Save new refresh token
         RefreshToken refreshToken = RefreshToken.builder()
@@ -256,13 +257,13 @@ public class AuthService {
                 .user(user)
                 .expiresAt(ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000))
                 .build();
-
         refreshTokenRepository.save(refreshToken);
+        log.info("Save new refresh token for user: {}", user.getId());
     }
 
     @Transactional
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
-        log.info("User logged out: {}", userId);
+        log.info("Delete refresh token when logout for user: {}", userId);
     }
 }

@@ -137,6 +137,18 @@ public class AuthController {
         })
         public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal UserDetailsImpl userDetails) {
                 authService.logout(userDetails.getUserId());
-                return ResponseEntity.ok(ApiResponse.ok(null, "Logout successful"));
+
+                // Clear the refresh token cookie at client side
+                ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                                .httpOnly(true)
+                                .secure(cookieSecure)
+                                .path("/")
+                                .maxAge(0)
+                                .sameSite(cookieSameSite)
+                                .build();
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                                .body(ApiResponse.ok(null, "Logout successful"));
         }
 }
