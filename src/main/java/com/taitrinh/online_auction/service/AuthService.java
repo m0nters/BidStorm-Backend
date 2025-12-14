@@ -5,11 +5,13 @@ import java.time.ZonedDateTime;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taitrinh.online_auction.dto.auth.LoginRequest;
@@ -51,6 +53,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RecaptchaService recaptchaService;
     private final EmailService emailService;
+    private final ApplicationContext applicationContext;
 
     @Value("${jwt.access-token-expiration}")
     private Long accessTokenExpiration;
@@ -153,11 +156,11 @@ public class AuthService {
         if (storedToken.isRevoked()) {
             log.warn("⚠️ SECURITY ALERT: Revoked token reuse detected for user: {}. Revoking all tokens.", email);
 
-            // Revoke all tokens for this user (token family breach)
-            refreshTokenRepository.revokeAllByUserId(storedToken.getUser().getId(), ZonedDateTime.now());
-
-            throw new InvalidRefreshTokenException(
-                    "Token has been revoked. Possible security breach detected. Please login again.");
+            // Revoke all tokens in SEPARATE transaction (persists even when exception is
+            // thrown)
+            // Call through Spring proxy to ensure REQUIRES_NEW propagation works
+            applicationContext.getBean(AuthService.class).revokeAllUserTokens(storedToken.getUser().getId());
+            throw new InvalidRefreshTokenException("Token has been revoked. Please login again.");
         }
 
         // Check if token is expired
@@ -285,6 +288,18 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
         log.info("Saved new refresh token for user: {}", user.getId());
+    }
+
+    /**
+     * Revoke all refresh tokens for a user in a SEPARATE transaction.
+     * This ensures the revocation persists even if the calling method throws an
+     * exception.
+     * Used for security breach detection.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void revokeAllUserTokens(Long userId) {
+        refreshTokenRepository.revokeAllByUserId(userId, ZonedDateTime.now());
+        log.info("✅ All tokens revoked for user {} due to security breach", userId);
     }
 
     @Transactional

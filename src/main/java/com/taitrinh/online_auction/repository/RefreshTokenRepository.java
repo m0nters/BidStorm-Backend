@@ -37,7 +37,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      * Used for security breach detection (when a revoked token is reused)
      * and during logout to maintain audit trail.
      */
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshToken r SET r.revokedAt = :revokedAt WHERE r.user.id = :userId AND r.revokedAt IS NULL")
     void revokeAllByUserId(@Param("userId") Long userId, @Param("revokedAt") ZonedDateTime revokedAt);
 
