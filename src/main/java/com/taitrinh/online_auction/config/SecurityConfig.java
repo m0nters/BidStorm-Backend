@@ -42,16 +42,27 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/v1/**").permitAll()
+                        // Swagger/OpenAPI endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
+                        // Public authentication endpoints
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+
+                        // Public product browsing endpoints (GET only)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/config/**").permitAll()
+
+                        // Profile endpoints - require authentication
+                        .requestMatchers("/api/v1/profile/**").authenticated()
+
                         // Seller endpoints - require SELLER role
-                        .requestMatchers(HttpMethod.POST, "/api/products").hasRole("SELLER")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole("SELLER")
 
                         // Admin endpoints
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated())
@@ -92,5 +103,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Bean
+    public org.springframework.web.client.RestTemplate restTemplate() {
+        return new org.springframework.web.client.RestTemplate();
     }
 }

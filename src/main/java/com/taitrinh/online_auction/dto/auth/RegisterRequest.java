@@ -36,6 +36,7 @@ public class RegisterRequest {
     @Schema(description = "User's full name", example = "John Doe")
     private String fullName;
 
+    @NotBlank(message = "Address is required")
     @Size(max = 500, message = "Address must not exceed 500 characters")
     @Schema(description = "User's address", example = "123 Main Street, District 1, Ho Chi Minh City")
     private String address;

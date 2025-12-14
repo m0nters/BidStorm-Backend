@@ -18,11 +18,41 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     Optional<RefreshToken> findByUserId(Long userId);
 
+    /**
+     * Find a valid (non-revoked) refresh token by its token string.
+     * Used for token validation during refresh operations.
+     */
+    @Query("SELECT r FROM RefreshToken r WHERE r.token = :token AND r.revokedAt IS NULL")
+    Optional<RefreshToken> findValidByToken(@Param("token") String token);
+
+    /**
+     * Find a refresh token by the new token that replaced it.
+     * Used for detecting token reuse attacks.
+     */
+    @Query("SELECT r FROM RefreshToken r WHERE r.replacedBy = :newToken")
+    Optional<RefreshToken> findByReplacedBy(@Param("newToken") String newToken);
+
+    /**
+     * Revoke all refresh tokens for a specific user.
+     * Used for security breach detection (when a revoked token is reused)
+     * and during logout to maintain audit trail.
+     */
+    @Modifying
+    @Query("UPDATE RefreshToken r SET r.revokedAt = :revokedAt WHERE r.user.id = :userId AND r.revokedAt IS NULL")
+    void revokeAllByUserId(@Param("userId") Long userId, @Param("revokedAt") ZonedDateTime revokedAt);
+
+    /**
+     * Delete expired tokens (cleanup job).
+     * Note: We keep revoked tokens for audit trail, only delete truly expired ones.
+     */
     @Modifying
     @Query("DELETE FROM RefreshToken r WHERE r.expiresAt < :now")
     void deleteExpired(@Param("now") ZonedDateTime now);
 
+    /**
+     * Delete all tokens for a user (deprecated - use revokeAllByUserId instead).
+     * Kept for backward compatibility but should be phased out.
+     */
     @Modifying
-    @Query("DELETE FROM RefreshToken r WHERE r.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 }

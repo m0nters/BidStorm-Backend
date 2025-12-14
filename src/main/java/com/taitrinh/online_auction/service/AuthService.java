@@ -49,6 +49,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final RecaptchaService recaptchaService;
+    private final EmailService emailService;
 
     @Value("${jwt.access-token-expiration}")
     private Long accessTokenExpiration;
@@ -63,9 +65,8 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequest request) {
-        // TODO: Verify reCAPTCHA token
-        // This requires calling Google reCAPTCHA API
-        // For now, we'll skip this validation
+        // Verify reCAPTCHA token
+        recaptchaService.verifyRecaptcha(request.getRecaptchaToken());
 
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -148,8 +149,19 @@ public class AuthService {
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not found"));
 
+        // SECURITY: Check if token has been revoked (possible reuse attack)
+        if (storedToken.isRevoked()) {
+            log.warn("⚠️ SECURITY ALERT: Revoked token reuse detected for user: {}. Revoking all tokens.", email);
+
+            // Revoke all tokens for this user (token family breach)
+            refreshTokenRepository.revokeAllByUserId(storedToken.getUser().getId(), ZonedDateTime.now());
+
+            throw new InvalidRefreshTokenException(
+                    "Token has been revoked. Possible security breach detected. Please login again.");
+        }
+
         // Check if token is expired
-        if (storedToken.getExpiresAt().isBefore(ZonedDateTime.now())) {
+        if (storedToken.isExpired()) {
             refreshTokenRepository.delete(storedToken);
             throw new InvalidRefreshTokenException("Refresh token expired");
         }
@@ -158,14 +170,30 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
 
-        // Generate new access token
+        // Generate new tokens
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
         String newAccessToken = jwtUtil.generateAccessToken(userDetails, user.getId(), user.getRole().getName());
+        String newRefreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
 
-        // Build response
+        // TOKEN ROTATION: Revoke old token and link to new one
+        storedToken.revokeAndReplace(newRefreshToken);
+        refreshTokenRepository.save(storedToken);
+        refreshTokenRepository.flush(); // Force immediate persistence to database
+
+        log.info("Token rotated for user: {}. Old token revoked.", email);
+
+        // Save new refresh token
+        RefreshToken newToken = RefreshToken.builder()
+                .token(newRefreshToken)
+                .user(user)
+                .expiresAt(ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000))
+                .build();
+        refreshTokenRepository.save(newToken);
+
+        // Build response with NEW refresh token
         return LoginResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken) // Return same refresh token
+                .refreshToken(newRefreshToken) // Return NEW refresh token
                 .tokenType("Bearer")
                 .expiresIn(accessTokenExpiration / 1000)
                 .user(LoginResponse.UserInfo.builder()
@@ -214,9 +242,6 @@ public class AuthService {
             throw new EmailAlreadyVerifiedException(email);
         }
 
-        // Mark all previous OTPs as used
-        emailOtpRepository.markAllAsUsed(email, OtpPurpose.REGISTRATION);
-
         // Generate and send new OTP
         sendOtp(email, OtpPurpose.REGISTRATION);
 
@@ -224,6 +249,9 @@ public class AuthService {
     }
 
     private void sendOtp(String email, OtpPurpose purpose) {
+        // Mark all previous OTPs as used (security best practice)
+        emailOtpRepository.markAllAsUsed(email, purpose);
+
         // Generate 6-digit OTP
         String otpCode = String.format("%06d", random.nextInt(1000000));
 
@@ -238,18 +266,16 @@ public class AuthService {
 
         emailOtpRepository.save(otp);
 
-        // TODO: Send email with OTP
-        // This requires email service configuration (e.g., SMTP, SendGrid, AWS SES)
-        // For now, log the OTP (REMOVE THIS IN PRODUCTION!)
-        log.info("OTP for {}: {}", email, otpCode);
+        // Send email with OTP
+        emailService.sendOtpEmail(email, otpCode, otpExpirationMinutes);
 
         log.info("OTP sent to: {}", email);
     }
 
     private void saveRefreshToken(User user, String token) {
-        // Delete existing refresh token for this user
-        refreshTokenRepository.deleteByUserId(user.getId());
-        log.info("Delete existing refresh token for user: {}", user.getId());
+        // Revoke existing active refresh tokens for this user (audit trail)
+        refreshTokenRepository.revokeAllByUserId(user.getId(), ZonedDateTime.now());
+        log.info("Revoked existing refresh tokens for user: {}", user.getId());
 
         // Save new refresh token
         RefreshToken refreshToken = RefreshToken.builder()
@@ -258,12 +284,13 @@ public class AuthService {
                 .expiresAt(ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000))
                 .build();
         refreshTokenRepository.save(refreshToken);
-        log.info("Save new refresh token for user: {}", user.getId());
+        log.info("Saved new refresh token for user: {}", user.getId());
     }
 
     @Transactional
     public void logout(Long userId) {
-        refreshTokenRepository.deleteByUserId(userId);
-        log.info("Delete refresh token when logout for user: {}", userId);
+        // Revoke all tokens instead of deleting (maintains audit trail)
+        refreshTokenRepository.revokeAllByUserId(userId, ZonedDateTime.now());
+        log.info("Revoked all refresh tokens for user {} during logout", userId);
     }
 }

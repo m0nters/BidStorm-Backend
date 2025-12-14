@@ -17,6 +17,22 @@ spring:
         "[format_sql]": true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # Email Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+
 server:
   port: ${PORT}
 
@@ -32,5 +48,15 @@ otp:
 
 # Cookie Configuration (For refresh token)
 cookie:
-  secure: false # Set to true in production (requires HTTPS)
-  same-site: Lax # Lax for good balance, Strict for maximum security
+  secure: true
+  same-site: Strict
+
+# Google reCAPTCHA Configuration
+recaptcha:
+  secret-key: ${RECAPTCHA_SECRET_KEY}
+  site-key: ${RECAPTCHA_SITE_KEY}
+  verify-url: https://www.google.com/recaptcha/api/siteverify
+
+# Application Configuration
+app:
+  name: BidStorm

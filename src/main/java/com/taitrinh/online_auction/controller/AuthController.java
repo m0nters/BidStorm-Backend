@@ -91,19 +91,30 @@ public class AuthController {
         }
 
         @PostMapping("/refresh")
-        @Operation(summary = "Refresh access token", description = "Generate a new access token using the refresh token from httpOnly cookie")
+        @Operation(summary = "Refresh access token", description = "Generate new access and refresh tokens using the refresh token from httpOnly cookie. Implements token rotation for enhanced security.")
         @ApiResponses(value = {
-                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully. New refresh token set in cookie."),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
         })
         public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(
                         @CookieValue(name = "refreshToken", required = true) String refreshToken) {
                 LoginResponse response = authService.refreshToken(refreshToken);
 
-                // Refresh token remains in the cookie, so remove it from response body
+                // TOKEN ROTATION: Set new refresh token in HttpOnly cookie
+                ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", response.getRefreshToken())
+                                .httpOnly(true)
+                                .secure(cookieSecure)
+                                .path("/")
+                                .maxAge(refreshTokenExpiration / 1000) // Convert milliseconds to seconds
+                                .sameSite(cookieSameSite)
+                                .build();
+
+                // Remove refresh token from response body (it's in the cookie)
                 response.setRefreshToken(null);
 
-                return ResponseEntity.ok(ApiResponse.ok(response, "Token refreshed successfully"));
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString())
+                                .body(ApiResponse.ok(response, "Token refreshed successfully"));
         }
 
         @PostMapping("/verify-otp")

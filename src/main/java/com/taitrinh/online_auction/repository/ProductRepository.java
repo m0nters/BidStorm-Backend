@@ -87,4 +87,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         Optional<Product> findBySlug(@Param("slug") String slug);
 
         boolean existsBySlug(String slug);
+
+        // Find products won by a user (where user is winner and product ended)
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.seller " +
+                        "LEFT JOIN FETCH p.category c " +
+                        "LEFT JOIN FETCH c.parent " +
+                        "LEFT JOIN FETCH p.images " +
+                        "WHERE p.winner.id = :userId AND p.isEnded = true " +
+                        "ORDER BY p.endTime DESC")
+        Page<Product> findByWinner_IdAndIsEndedTrue(@Param("userId") Long userId, Pageable pageable);
 }

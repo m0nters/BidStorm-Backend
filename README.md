@@ -1,8 +1,8 @@
-# StormBid - Backend API
+# BidStorm - Backend API
 
 ## 📋 Tổng Quan Dự Án
 
-**StormBid** là một nền tảng đấu giá trực tuyến toàn diện, cho phép người dùng mua bán sản phẩm thông qua hình thức đấu giá. Hệ thống được xây dựng theo kiến trúc RESTful API với Spring Boot, cung cấp các chức năng hoàn chỉnh cho cả người mua (bidder), người bán (seller), và quản trị viên (administrator).
+**BidStorm** là một nền tảng đấu giá trực tuyến toàn diện, cho phép người dùng mua bán sản phẩm thông qua hình thức đấu giá. Hệ thống được xây dựng theo kiến trúc RESTful API với Spring Boot, cung cấp các chức năng hoàn chỉnh cho cả người mua (bidder), người bán (seller), và quản trị viên (administrator).
 
 ### 🎯 Các Tính Năng Chính
 
