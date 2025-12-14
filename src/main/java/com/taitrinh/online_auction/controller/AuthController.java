@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
+import com.taitrinh.online_auction.dto.auth.ForgotPasswordRequest;
 import com.taitrinh.online_auction.dto.auth.LoginRequest;
 import com.taitrinh.online_auction.dto.auth.LoginResponse;
+import com.taitrinh.online_auction.dto.auth.OtpRequest;
 import com.taitrinh.online_auction.dto.auth.RegisterRequest;
-import com.taitrinh.online_auction.dto.auth.VerifyOtpRequest;
+import com.taitrinh.online_auction.dto.auth.ResetPasswordRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
 import com.taitrinh.online_auction.service.AuthService;
 
@@ -117,27 +119,66 @@ public class AuthController {
                                 .body(ApiResponse.ok(response, "Token refreshed successfully"));
         }
 
-        @PostMapping("/verify-otp")
+        @PostMapping("/verify-email-otp")
         @Operation(summary = "Verify email with OTP", description = "Verify user email address using the OTP sent during registration")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Email verified successfully"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired OTP")
         })
-        public ResponseEntity<ApiResponse<Void>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
-                authService.verifyOtp(request);
+        public ResponseEntity<ApiResponse<Void>> verifyEmailOtp(@Valid @RequestBody OtpRequest request) {
+                authService.verifyEmailOtp(request);
                 return ResponseEntity.ok(ApiResponse.ok(null, "Email verified successfully"));
         }
 
-        @PostMapping("/resend-otp")
+        @PostMapping("/resend-email-verification-otp")
         @Operation(summary = "Resend OTP", description = "Resend verification OTP to user's email address")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OTP sent successfully"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "User not found or email already verified")
         })
-        public ResponseEntity<ApiResponse<Void>> resendOtp(
+        public ResponseEntity<ApiResponse<Void>> resendEmailVerificationOtp(
                         @Parameter(description = "User email address", example = "john.doe@example.com") @RequestParam @Email String email) {
-                authService.resendOtp(email);
+                authService.resendEmailVerificationOtp(email);
                 return ResponseEntity.ok(ApiResponse.ok(null, "OTP sent successfully"));
+        }
+
+        @PostMapping("/forgot-password")
+        @Operation(summary = "Request password reset", description = "Send OTP to email for password reset. Returns success even if email doesn't exist (security best practice).")
+        @ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "If email exists, OTP has been sent"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input")
+        })
+        public ResponseEntity<ApiResponse<Void>> forgotPassword(
+                        @Valid @RequestBody ForgotPasswordRequest request) {
+                authService.forgotPassword(request.getEmail());
+                return ResponseEntity.ok(ApiResponse.ok(null,
+                                "If your email exists in our system, you will receive a password reset OTP shortly."));
+        }
+
+        @PostMapping("/verify-reset-password-otp")
+        @Operation(summary = "Verify password reset OTP", description = "Verify the OTP. This allows the frontend to validate the OTP before proceeding to the password change page.")
+        @ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OTP is valid"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired OTP")
+        })
+        public ResponseEntity<ApiResponse<Void>> verifyResetPasswordOtp(
+                        @Valid @RequestBody OtpRequest request) {
+                authService.verifyResetPasswordOtp(request.getEmail(), request.getOtpCode());
+                return ResponseEntity.ok(
+                                ApiResponse.ok(null, "OTP verified successfully. You can now reset your password."));
+        }
+
+        @PostMapping("/reset-password")
+        @Operation(summary = "Reset password with OTP", description = "Reset password after OTP verification. The OTP must have been verified in the previous step.")
+        @ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password reset successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+        })
+        public ResponseEntity<ApiResponse<Void>> resetPassword(
+                        @Valid @RequestBody ResetPasswordRequest request) {
+                authService.resetPassword(request.getEmail(), request.getNewPassword());
+                return ResponseEntity.ok(ApiResponse.ok(null,
+                                "Password reset successfully. All active sessions have been terminated. Please login with your new password."));
         }
 
         @PostMapping("/logout")
@@ -162,4 +203,5 @@ public class AuthController {
                                 .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
                                 .body(ApiResponse.ok(null, "Logout successful"));
         }
+
 }

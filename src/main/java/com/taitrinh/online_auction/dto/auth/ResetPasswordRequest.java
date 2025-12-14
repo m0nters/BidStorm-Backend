@@ -14,17 +14,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Email OTP verification request")
-public class VerifyOtpRequest {
+@Schema(description = "Request to reset password with OTP")
+public class ResetPasswordRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     @Schema(description = "User email address", example = "john.doe@example.com")
     private String email;
 
-    @NotBlank(message = "OTP code is required")
-    @Size(min = 6, max = 6, message = "OTP code must be 6 digits")
-    @Pattern(regexp = "\\d{6}", message = "OTP code must contain only digits")
-    @Schema(description = "6-digit OTP code", example = "123456")
-    private String otpCode;
+    @NotBlank(message = "New password is required")
+    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character")
+    @Schema(description = "New password (min 8 chars, must contain uppercase, lowercase, number, special char)", example = "NewPassword123!")
+    private String newPassword;
 }

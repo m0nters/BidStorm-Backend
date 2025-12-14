@@ -56,7 +56,7 @@ public class EmailOtp {
     private ZonedDateTime createdAt;
 
     public enum OtpPurpose {
-        REGISTRATION, PASSWORD_RESET
+        EMAIL_VERIFICATION, PASSWORD_RESET
     }
 
     // Helper methods

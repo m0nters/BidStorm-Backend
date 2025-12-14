@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.taitrinh.online_auction.dto.auth.LoginRequest;
 import com.taitrinh.online_auction.dto.auth.LoginResponse;
+import com.taitrinh.online_auction.dto.auth.OtpRequest;
 import com.taitrinh.online_auction.dto.auth.RegisterRequest;
-import com.taitrinh.online_auction.dto.auth.VerifyOtpRequest;
 import com.taitrinh.online_auction.entity.EmailOtp;
 import com.taitrinh.online_auction.entity.EmailOtp.OtpPurpose;
 import com.taitrinh.online_auction.entity.RefreshToken;
@@ -95,7 +95,7 @@ public class AuthService {
         userRepository.save(user);
 
         // Generate and send OTP
-        sendOtp(request.getEmail(), OtpPurpose.REGISTRATION);
+        sendOtp(request.getEmail(), OtpPurpose.EMAIL_VERIFICATION);
 
         log.info("User registered successfully: {}", request.getEmail());
     }
@@ -136,6 +136,55 @@ public class AuthService {
                         .isActive(user.getIsActive())
                         .build())
                 .build();
+    }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        // Check if user exists (but don't reveal if they don't - security best
+        // practice)
+        if (!userRepository.existsByEmail(email)) {
+            log.warn("Password reset requested for non-existent email: {}", email);
+            // Still return success to prevent email enumeration attacks
+            return;
+        }
+
+        // Generate and send OTP
+        sendOtp(email, OtpPurpose.PASSWORD_RESET);
+
+        log.info("Password reset OTP sent to: {}", email);
+    }
+
+    @Transactional
+    public void verifyResetPasswordOtp(String email, String otpCode) {
+        // Find and verify OTP
+        EmailOtp otp = emailOtpRepository.findValidOtp(
+                email,
+                otpCode,
+                OtpPurpose.PASSWORD_RESET,
+                ZonedDateTime.now())
+                .orElseThrow(() -> new InvalidOtpException());
+
+        // Mark OTP as used
+        otp.setIsUsed(true);
+        emailOtpRepository.save(otp);
+
+        log.info("Password reset OTP verified and marked as used for: {}", email);
+    }
+
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        // Find user (OTP was already verified in previous step)
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Revoke all refresh tokens for security (force re-login for every session)
+        refreshTokenRepository.revokeAllByUserId(user.getId(), ZonedDateTime.now());
+
+        log.info("Password reset successfully for user: {}. All tokens revoked.", email);
     }
 
     @Transactional
@@ -211,12 +260,12 @@ public class AuthService {
     }
 
     @Transactional
-    public void verifyOtp(VerifyOtpRequest request) {
+    public void verifyEmailOtp(OtpRequest request) {
         // Find valid OTP
         EmailOtp otp = emailOtpRepository.findValidOtp(
                 request.getEmail(),
                 request.getOtpCode(),
-                OtpPurpose.REGISTRATION,
+                OtpPurpose.EMAIL_VERIFICATION,
                 ZonedDateTime.now())
                 .orElseThrow(() -> new InvalidOtpException());
 
@@ -235,7 +284,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void resendOtp(String email) {
+    public void resendEmailVerificationOtp(String email) {
         // Check if user exists
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
@@ -246,7 +295,7 @@ public class AuthService {
         }
 
         // Generate and send new OTP
-        sendOtp(email, OtpPurpose.REGISTRATION);
+        sendOtp(email, OtpPurpose.EMAIL_VERIFICATION);
 
         log.info("OTP resent to: {}", email);
     }
@@ -269,8 +318,12 @@ public class AuthService {
 
         emailOtpRepository.save(otp);
 
-        // Send email with OTP
-        emailService.sendOtpEmail(email, otpCode, otpExpirationMinutes);
+        // Send email with OTP (different template based on purpose)
+        if (purpose == OtpPurpose.PASSWORD_RESET) {
+            emailService.sendPasswordResetOtp(email, otpCode, otpExpirationMinutes);
+        } else {
+            emailService.sendEmailVerificationOTP(email, otpCode, otpExpirationMinutes);
+        }
 
         log.info("OTP sent to: {}", email);
     }
