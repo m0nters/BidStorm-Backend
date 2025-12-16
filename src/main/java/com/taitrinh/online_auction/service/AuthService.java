@@ -78,7 +78,7 @@ public class AuthService {
 
         // Get BIDDER role (default role for new users)
         Role bidderRole = roleRepository.findById(Role.BIDDER)
-                .orElseThrow(() -> new IllegalStateException("BIDDER role not found"));
+                .orElseThrow(() -> new IllegalStateException("Vai trò BIDDER không tồn tại"));
 
         // Create user
         User user = User.builder()
@@ -199,7 +199,7 @@ public class AuthService {
 
         // Verify token exists in database
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not found"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Không tìm thấy refresh token"));
 
         // SECURITY: Check if token has been revoked (possible reuse attack)
         if (storedToken.isRevoked()) {
@@ -209,13 +209,13 @@ public class AuthService {
             // thrown)
             // Call through Spring proxy to ensure REQUIRES_NEW propagation works
             applicationContext.getBean(AuthService.class).revokeAllUserTokens(storedToken.getUser().getId());
-            throw new InvalidRefreshTokenException("Token has been revoked. Please login again.");
+            throw new InvalidRefreshTokenException("Token đã bị thu hồi. Vui lòng đăng nhập lại.");
         }
 
         // Check if token is expired
         if (storedToken.isExpired()) {
             refreshTokenRepository.delete(storedToken);
-            throw new InvalidRefreshTokenException("Refresh token expired");
+            throw new InvalidRefreshTokenException("Refresh token đã hết hạn");
         }
 
         // Get user

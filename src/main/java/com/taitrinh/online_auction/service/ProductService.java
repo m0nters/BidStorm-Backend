@@ -158,7 +158,7 @@ public class ProductService {
         log.debug("Getting product detail for id: {}", id);
 
         Product product = productRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
 
         // Increment view count (in a separate transaction to avoid locking)
         incrementViewCount(id);
@@ -175,7 +175,7 @@ public class ProductService {
         log.debug("Getting product detail for slug: {}", slug);
 
         Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new RuntimeException("Product not found with slug: " + slug));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với slug: " + slug));
 
         // Increment view count (in a separate transaction to avoid locking)
         incrementViewCount(product.getId());
@@ -193,7 +193,7 @@ public class ProductService {
 
         // Fetch the product to get its category
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
 
         Integer categoryId = product.getCategory().getId();
         log.debug("Found category: {} for product: {}", categoryId, productId);
@@ -216,7 +216,7 @@ public class ProductService {
 
         // Verify product exists
         productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
 
         List<BidHistory> bidHistories = bidHistoryRepository.findByProductIdOrderByCreatedAtDesc(productId);
         return productMapper.toBidHistoryResponseList(bidHistories);
@@ -247,21 +247,21 @@ public class ProductService {
 
         // Validate seller exists and is active
         User seller = userRepository.findActiveUserById(sellerId)
-                .orElseThrow(() -> new RuntimeException("Seller not found or inactive"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán hoặc người bán không hoạt động"));
 
         // Validate seller has permission to sell
         if (!seller.isSeller()) {
-            throw new RuntimeException("User does not have seller permission");
+            throw new RuntimeException("Người dùng không có quyền bán");
         }
 
         // Validate category exists
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với id: " + request.getCategoryId()));
 
         // Validate buyNowPrice if provided
         if (request.getBuyNowPrice() != null &&
                 request.getBuyNowPrice().compareTo(request.getStartingPrice()) <= 0) {
-            throw new RuntimeException("Buy now price must be greater than starting price");
+            throw new RuntimeException("Giá mua ngay phải lớn hơn giá khởi điểm");
         }
 
         // Validate at least one image is marked as primary
@@ -269,10 +269,10 @@ public class ProductService {
                 .filter(CreateProductRequest.ProductImageRequest::getIsPrimary)
                 .count();
         if (primaryCount == 0) {
-            throw new RuntimeException("At least one image must be marked as primary");
+            throw new RuntimeException("Phải có ít nhất một ảnh được đánh dấu là ảnh chính");
         }
         if (primaryCount > 1) {
-            throw new RuntimeException("Only one image can be marked as primary");
+            throw new RuntimeException("Chỉ có thể có một ảnh được đánh dấu là ảnh chính");
         }
 
         String slug = SlugUtils.toSlug(request.getTitle());
@@ -327,16 +327,16 @@ public class ProductService {
 
         // Validate product exists
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
 
         // Validate seller owns the product
         if (!product.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("Only the product owner can update description");
+            throw new RuntimeException("Chỉ người bán mới có quyền cập nhật mô tả");
         }
 
         // Validate product is not ended
         if (product.getIsEnded()) {
-            throw new RuntimeException("Cannot update description of ended product");
+            throw new RuntimeException("Không thể cập nhật mô tả sản phẩm đã kết thúc");
         }
 
         // Append new description to existing one

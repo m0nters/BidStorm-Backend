@@ -134,7 +134,7 @@ public class ProfileService {
 
         // Verify old password
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-            throw new BadRequestException("Old password is incorrect");
+            throw new BadRequestException("Mật khẩu cũ không chính xác");
         }
 
         // Encode and set new password
@@ -171,16 +171,16 @@ public class ProfileService {
     public void createReview(Long reviewerId, CreateReviewRequest request) {
         // Validate rating value
         if (request.getRating() != 1 && request.getRating() != -1) {
-            throw new BadRequestException("Rating must be 1 or -1");
+            throw new BadRequestException("Đánh giá phải là 1 hoặc -1");
         }
 
         // Get the product
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", request.getProductId()));
 
         // Check if product has ended
         if (!product.getIsEnded()) {
-            throw new BadRequestException("Cannot review a product that hasn't ended");
+            throw new BadRequestException("Không thể đánh giá sản phẩm chưa kết thúc");
         }
 
         User reviewer = userRepository.findById(reviewerId)
@@ -191,19 +191,19 @@ public class ProfileService {
         if (product.getSeller().getId().equals(reviewerId)) {
             // Seller is reviewing the winner (buyer)
             if (product.getWinner() == null) {
-                throw new BadRequestException("This product has no winner to review");
+                throw new BadRequestException("Sản phẩm này không có người thắng để đánh giá");
             }
             reviewee = product.getWinner();
         } else if (product.getWinner() != null && product.getWinner().getId().equals(reviewerId)) {
             // Winner is reviewing the seller
             reviewee = product.getSeller();
         } else {
-            throw new BadRequestException("You can only review products you won or sold");
+            throw new BadRequestException("Bạn chỉ có thể đánh giá sản phẩm bạn đã thắng hoặc bán");
         }
 
         // Check if review already exists
         if (reviewRepository.existsByProduct_IdAndReviewer_Id(product.getId(), reviewerId)) {
-            throw new BadRequestException("You have already reviewed this transaction");
+            throw new BadRequestException("Bạn đã đánh giá giao dịch này rồi");
         }
 
         // Create review

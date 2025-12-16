@@ -37,7 +37,7 @@ public class RecaptchaService {
      */
     public void verifyRecaptcha(String token) {
         if (token == null || token.trim().isEmpty()) {
-            throw new InvalidRecaptchaException("reCAPTCHA token is missing");
+            throw new InvalidRecaptchaException("Token reCAPTCHA không hợp lệ");
         }
 
         try {
@@ -61,19 +61,19 @@ public class RecaptchaService {
             // Check response
             if (response == null) {
                 log.error("reCAPTCHA verification failed: No response from Google API");
-                throw new InvalidRecaptchaException("reCAPTCHA verification failed");
+                throw new InvalidRecaptchaException("Xác minh reCAPTCHA thất bại");
             }
 
             if (!response.isSuccess()) {
                 log.warn("reCAPTCHA verification failed. Error codes: {}", response.getErrorCodes());
-                throw new InvalidRecaptchaException("reCAPTCHA verification failed");
+                throw new InvalidRecaptchaException("Xác minh reCAPTCHA thất bại");
             }
 
             log.info("reCAPTCHA verification successful");
 
         } catch (RestClientException e) {
             log.error("Error calling reCAPTCHA API: {}", e.getMessage());
-            throw new InvalidRecaptchaException("Failed to verify reCAPTCHA due to network error");
+            throw new InvalidRecaptchaException("Xác minh reCAPTCHA thất bại do lỗi mạng");
         }
     }
 }
