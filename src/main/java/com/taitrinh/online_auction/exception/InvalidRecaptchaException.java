@@ -3,7 +3,7 @@ package com.taitrinh.online_auction.exception;
 public class InvalidRecaptchaException extends RuntimeException {
 
     public InvalidRecaptchaException() {
-        super("Invalid reCAPTCHA verification");
+        super("Xác nhận reCAPTCHA không hợp lệ");
     }
 
     public InvalidRecaptchaException(String message) {

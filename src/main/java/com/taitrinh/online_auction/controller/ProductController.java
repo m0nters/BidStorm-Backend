@@ -47,7 +47,7 @@ public class ProductController {
         public ResponseEntity<ApiResponse<List<ProductListResponse>>> getTop5EndingSoon() {
                 List<ProductListResponse> products = productService.getTop5EndingSoon();
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Top 5 products ending soon retrieved successfully"));
+                                "Top 5 sản phẩm sắp kết thúc đã được lấy thành công"));
         }
 
         @GetMapping("/top/most-bids")
@@ -55,7 +55,7 @@ public class ProductController {
         public ResponseEntity<ApiResponse<List<ProductListResponse>>> getTop5ByBidCount() {
                 List<ProductListResponse> products = productService.getTop5ByBidCount();
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Top 5 products by bid count retrieved successfully"));
+                                "Top 5 sản phẩm với số lượng đấu giá cao nhất đã được lấy thành công"));
         }
 
         @GetMapping("/top/highest-price")
@@ -63,7 +63,7 @@ public class ProductController {
         public ResponseEntity<ApiResponse<List<ProductListResponse>>> getTop5ByPrice() {
                 List<ProductListResponse> products = productService.getTop5ByPrice();
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Top 5 products by price retrieved successfully"));
+                                "Top 5 sản phẩm với giá cao nhất đã được lấy thành công"));
         }
 
         @GetMapping("/category/{categoryId}")
@@ -82,7 +82,7 @@ public class ProductController {
                 Page<ProductListResponse> products = productService.getProductsByCategory(
                                 categoryId, page, size, sortBy, sortDirection);
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Products by category retrieved successfully"));
+                                "Sản phẩm trong danh mục đã được lấy thành công"));
         }
 
         @GetMapping("/search")
@@ -113,7 +113,7 @@ public class ProductController {
 
                 Page<ProductListResponse> products = productService.searchProducts(request);
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Products search completed successfully"));
+                                "Tìm kiếm sản phẩm đã hoàn thành thành công"));
         }
 
         @GetMapping("/id/{id}")
@@ -125,7 +125,7 @@ public class ProductController {
 
                 ProductDetailResponse product = productService.getProductDetail(id);
                 return ResponseEntity.ok(ApiResponse.ok(product,
-                                "Product details retrieved successfully"));
+                                "Chi tiết sản phẩm đã được lấy thành công"));
         }
 
         @GetMapping("/slug/{slug}")
@@ -137,7 +137,7 @@ public class ProductController {
 
                 ProductDetailResponse product = productService.getProductDetailBySlug(slug);
                 return ResponseEntity.ok(ApiResponse.ok(product,
-                                "Product details retrieved successfully"));
+                                "Chi tiết sản phẩm đã được lấy thành công"));
         }
 
         @GetMapping("/{id}/related")
@@ -147,7 +147,7 @@ public class ProductController {
 
                 List<ProductListResponse> products = productService.getRelatedProducts(id);
                 return ResponseEntity.ok(ApiResponse.ok(products,
-                                "Related products retrieved successfully"));
+                                "Sản phẩm liên quan đã được lấy thành công"));
         }
 
         @GetMapping("/{id}/bid-history")
@@ -159,7 +159,7 @@ public class ProductController {
 
                 List<BidHistoryResponse> bidHistory = productService.getBidHistory(id);
                 return ResponseEntity.ok(ApiResponse.ok(bidHistory,
-                                "Bid history retrieved successfully"));
+                                "Lịch sử đấu giá đã được lấy thành công"));
         }
 
         @PostMapping
@@ -170,7 +170,7 @@ public class ProductController {
 
                 CreateProductResponse product = productService.createProduct(request, userDetails.getUserId());
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(ApiResponse.ok(product, "Product created successfully"));
+                                .body(ApiResponse.ok(product, "Sản phẩm đã được tạo thành công"));
         }
 
         @PutMapping("/{id}/description")
@@ -183,6 +183,6 @@ public class ProductController {
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
                 productService.updateProductDescription(id, userDetails.getUserId(), request);
-                return ResponseEntity.ok(ApiResponse.ok(null, "Product description updated successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(null, "Mô tả sản phẩm đã được cập nhật thành công"));
         }
 }

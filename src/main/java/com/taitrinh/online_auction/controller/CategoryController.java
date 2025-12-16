@@ -35,14 +35,14 @@ public class CategoryController {
     @Operation(summary = "Get all categories", description = "Retrieve all categories in 2-level hierarchy (parent -> children)")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
         List<CategoryResponse> categories = categoryService.getAllCategoriesHierarchy();
-        return ResponseEntity.ok(ApiResponse.ok(categories, "Categories retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(categories, "Danh mục đã được lấy thành công"));
     }
 
     @GetMapping("/parents")
     @Operation(summary = "Get all parent categories", description = "Retrieve all top-level categories without children")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getParentCategories() {
         List<CategoryResponse> categories = categoryService.getAllParentCategories();
-        return ResponseEntity.ok(ApiResponse.ok(categories, "Parent categories retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(categories, "Danh mục cha đã được lấy thành công"));
     }
 
     @GetMapping("/{id}")
@@ -50,7 +50,7 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id) {
         CategoryResponse category = categoryService.getCategoryById(id);
-        return ResponseEntity.ok(ApiResponse.ok(category, "Category retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(category, "Danh mục đã được lấy thành công"));
     }
 
     @GetMapping("/{parentId}/sub-categories")
@@ -58,7 +58,7 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getSubCategories(
             @Parameter(description = "Parent category ID", example = "1") @PathVariable Integer parentId) {
         List<CategoryResponse> subCategories = categoryService.getSubCategories(parentId);
-        return ResponseEntity.ok(ApiResponse.ok(subCategories, "Sub-categories retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(subCategories, "Sub-categories đã được lấy thành công"));
     }
 
     @PostMapping
@@ -67,7 +67,7 @@ public class CategoryController {
             @Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
         return ResponseEntity.status(201)
-                .body(ApiResponse.created(category, "Category created successfully"));
+                .body(ApiResponse.created(category, "Danh mục đã được tạo thành công"));
     }
 
     @PutMapping("/{id}")
@@ -76,7 +76,7 @@ public class CategoryController {
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id,
             @Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.updateCategory(id, request);
-        return ResponseEntity.ok(ApiResponse.ok(category, "Category updated successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(category, "Danh mục đã được cập nhật thành công"));
     }
 
     @DeleteMapping("/{id}")
@@ -84,6 +84,6 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<Void>> deleteCategory(
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.ok(ApiResponse.ok(null, "Category deleted successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(null, "Danh mục đã được xóa thành công"));
     }
 }

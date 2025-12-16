@@ -53,7 +53,7 @@ public class ProfileController {
         public ResponseEntity<ApiResponse<UserProfileResponse>> getProfile(
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
                 UserProfileResponse profile = profileService.getUserProfile(userDetails.getUserId());
-                return ResponseEntity.ok(ApiResponse.ok(profile, "Profile retrieved successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(profile, "Thông tin tài khoản đã được lấy thành công"));
         }
 
         @PutMapping
@@ -67,7 +67,7 @@ public class ProfileController {
                         @AuthenticationPrincipal UserDetailsImpl userDetails,
                         @Valid @RequestBody UpdateProfileRequest request) {
                 UserProfileResponse profile = profileService.updateProfile(userDetails.getUserId(), request);
-                return ResponseEntity.ok(ApiResponse.ok(profile, "Profile updated successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(profile, "Thông tin tài khoản đã được cập nhật thành công"));
         }
 
         @PutMapping("/password")
@@ -81,7 +81,7 @@ public class ProfileController {
                         @AuthenticationPrincipal UserDetailsImpl userDetails,
                         @Valid @RequestBody ChangePasswordRequest request) {
                 profileService.changePassword(userDetails.getUserId(), request);
-                return ResponseEntity.ok(ApiResponse.ok(null, "Password changed successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(null, "Mật khẩu đã được thay đổi thành công"));
         }
 
         @GetMapping("/reviews")
@@ -96,7 +96,7 @@ public class ProfileController {
                         @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
                 Page<ReviewResponse> reviews = profileService.getUserReviews(userDetails.getUserId(),
                                 PageRequest.of(page, size));
-                return ResponseEntity.ok(ApiResponse.ok(reviews, "Reviews retrieved successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã được lấy thành công"));
         }
 
         @PostMapping("/reviews")
@@ -110,7 +110,7 @@ public class ProfileController {
                         @AuthenticationPrincipal UserDetailsImpl userDetails,
                         @Valid @RequestBody CreateReviewRequest request) {
                 profileService.createReview(userDetails.getUserId(), request);
-                return ResponseEntity.ok(ApiResponse.ok(null, "Review created successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(null, "Đánh giá đã được tạo thành công"));
         }
 
         @GetMapping("/favorites")
@@ -125,7 +125,8 @@ public class ProfileController {
                         @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
                 Page<FavoriteProductResponse> favorites = profileService.getFavoriteProducts(userDetails.getUserId(),
                                 PageRequest.of(page, size));
-                return ResponseEntity.ok(ApiResponse.ok(favorites, "Favorites retrieved successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(favorites,
+                                "Danh sách sản phẩm đã được yêu thích đã được lấy thành công"));
         }
 
         @GetMapping("/bidding")
@@ -141,7 +142,8 @@ public class ProfileController {
                 Page<BiddingProductResponse> biddingProducts = profileService.getBiddingProducts(
                                 userDetails.getUserId(),
                                 PageRequest.of(page, size));
-                return ResponseEntity.ok(ApiResponse.ok(biddingProducts, "Bidding products retrieved successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(biddingProducts,
+                                "Danh sách sản phẩm đang đấu giá đã được lấy thành công"));
         }
 
         @GetMapping("/won")
@@ -156,6 +158,7 @@ public class ProfileController {
                         @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
                 Page<WonProductResponse> wonProducts = profileService.getWonProducts(userDetails.getUserId(),
                                 PageRequest.of(page, size));
-                return ResponseEntity.ok(ApiResponse.ok(wonProducts, "Won products retrieved successfully"));
+                return ResponseEntity
+                                .ok(ApiResponse.ok(wonProducts, "Danh sách sản phẩm đã thắng đã được lấy thành công"));
         }
 }

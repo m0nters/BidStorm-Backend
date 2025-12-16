@@ -63,7 +63,7 @@ public class AuthController {
                 authService.register(request);
                 return ResponseEntity.status(HttpStatus.CREATED).body(
                                 ApiResponse.created(null,
-                                                "Registration successful. Please check your email for OTP verification."));
+                                                "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận OTP."));
         }
 
         @PostMapping("/login")
@@ -89,7 +89,7 @@ public class AuthController {
 
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                                .body(ApiResponse.ok(response, "Login successful"));
+                                .body(ApiResponse.ok(response, "Đăng nhập thành công"));
         }
 
         @PostMapping("/refresh")
@@ -116,7 +116,7 @@ public class AuthController {
 
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString())
-                                .body(ApiResponse.ok(response, "Token refreshed successfully"));
+                                .body(ApiResponse.ok(response, "Token đã được cập nhật"));
         }
 
         @PostMapping("/verify-email-otp")
@@ -127,7 +127,7 @@ public class AuthController {
         })
         public ResponseEntity<ApiResponse<Void>> verifyEmailOtp(@Valid @RequestBody OtpRequest request) {
                 authService.verifyEmailOtp(request);
-                return ResponseEntity.ok(ApiResponse.ok(null, "Email verified successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(null, "Email đã được xác nhận thành công"));
         }
 
         @PostMapping("/resend-email-verification-otp")
@@ -139,7 +139,7 @@ public class AuthController {
         public ResponseEntity<ApiResponse<Void>> resendEmailVerificationOtp(
                         @Parameter(description = "User email address", example = "john.doe@example.com") @RequestParam @Email String email) {
                 authService.resendEmailVerificationOtp(email);
-                return ResponseEntity.ok(ApiResponse.ok(null, "OTP sent successfully"));
+                return ResponseEntity.ok(ApiResponse.ok(null, "OTP đã được gửi lại thành công"));
         }
 
         @PostMapping("/forgot-password")
@@ -152,7 +152,7 @@ public class AuthController {
                         @Valid @RequestBody ForgotPasswordRequest request) {
                 authService.forgotPassword(request.getEmail());
                 return ResponseEntity.ok(ApiResponse.ok(null,
-                                "If your email exists in our system, you will receive a password reset OTP shortly."));
+                                "Mật khẩu đã được gửi lại thành công"));
         }
 
         @PostMapping("/verify-reset-password-otp")
@@ -165,7 +165,7 @@ public class AuthController {
                         @Valid @RequestBody OtpRequest request) {
                 authService.verifyResetPasswordOtp(request.getEmail(), request.getOtpCode());
                 return ResponseEntity.ok(
-                                ApiResponse.ok(null, "OTP verified successfully. You can now reset your password."));
+                                ApiResponse.ok(null, "OTP đã được xác nhận thành công. Bạn có thể thay đổi mật khẩu"));
         }
 
         @PostMapping("/reset-password")
@@ -178,7 +178,7 @@ public class AuthController {
                         @Valid @RequestBody ResetPasswordRequest request) {
                 authService.resetPassword(request.getEmail(), request.getNewPassword());
                 return ResponseEntity.ok(ApiResponse.ok(null,
-                                "Password reset successfully. All active sessions have been terminated. Please login with your new password."));
+                                "Mật khẩu đã được thay đổi thành công. Tất cả các phiên hoạt động đã được kết thúc. Vui lòng đăng nhập lại với mật khẩu mới."));
         }
 
         @PostMapping("/logout")
@@ -201,7 +201,7 @@ public class AuthController {
 
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
-                                .body(ApiResponse.ok(null, "Logout successful"));
+                                .body(ApiResponse.ok(null, "Đăng xuất thành công"));
         }
 
 }

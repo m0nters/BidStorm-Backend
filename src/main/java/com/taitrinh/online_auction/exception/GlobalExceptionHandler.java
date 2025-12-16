@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Invalid email or password");
+                "Email hoặc mật khẩu không hợp lệ");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -112,7 +112,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
-                "Account is disabled");
+                "Tài khoản đang bị vô hiệu hóa");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -121,7 +121,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
-                "Account is locked");
+                "Tài khoản đang bị khóa");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -130,7 +130,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Invalid email or password");
+                "Email hoặc mật khẩu không hợp lệ");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -139,7 +139,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Authentication failed: " + ex.getMessage());
+                "Xác thực thất bại: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -171,7 +171,7 @@ public class GlobalExceptionHandler {
             ErrorResponse errorResponse = ErrorResponse.of(
                     HttpStatus.UNAUTHORIZED.value(),
                     "Unauthorized",
-                    "Authentication required. Please provide a valid access token.");
+                    "Yêu cầu xác thực. Vui lòng cung cấp token hợp lệ.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
 
