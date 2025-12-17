@@ -97,4 +97,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "WHERE p.winner.id = :userId AND p.isEnded = true " +
                         "ORDER BY p.endTime DESC")
         Page<Product> findByWinner_IdAndIsEndedTrue(@Param("userId") Long userId, Pageable pageable);
+
+        // Find products by a list of category IDs with pagination (for parent category
+        // queries)
+        @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND p.isEnded = false")
+        Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds, Pageable pageable);
 }

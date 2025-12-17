@@ -173,7 +173,7 @@ public class EmailService {
     /**
      * Send welcome email after successful registration
      */
-    // @Async - Temporarily disabled for debugging
+    @Async
     public void sendWelcomeEmail(String toEmail, String fullName) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -296,7 +296,7 @@ public class EmailService {
                         </body>
                         </html>
                         """,
-                appName, fullName);
+                appName, fullName, appName);
     }
 
     /**

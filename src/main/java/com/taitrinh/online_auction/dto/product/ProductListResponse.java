@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Product list item response (for display in lists, grids, etc.)")
+@Schema(description = "Product list item response (for display in lists, grids, etc. with less detailed information)")
 public class ProductListResponse {
 
     @Schema(description = "Product ID", example = "1")

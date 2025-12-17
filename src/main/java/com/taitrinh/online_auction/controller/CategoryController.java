@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
@@ -45,11 +46,20 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.ok(categories, "Danh mục cha đã được lấy thành công"));
     }
 
-    @GetMapping("/{id}")
+    /* We don't use this endpoint on product, but the endpoint below */
+    @GetMapping("/id/{id}")
     @Operation(summary = "Get category by ID", description = "Retrieve a specific category with its children")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id) {
         CategoryResponse category = categoryService.getCategoryById(id);
+        return ResponseEntity.ok(ApiResponse.ok(category, "Danh mục đã được lấy thành công"));
+    }
+
+    @GetMapping("/slug")
+    @Operation(summary = "Get category by slug", description = "Retrieve a specific category by its slug. Supports hierarchical slugs with forward slashes (e.g., 'dien-tu/dien-thoai-di-dong')")
+    public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryBySlug(
+            @Parameter(description = "Category slug (can include forward slashes for hierarchical categories)", example = "dien-tu/dien-thoai-di-dong") @RequestParam String slug) {
+        CategoryResponse category = categoryService.getCategoryBySlug(slug);
         return ResponseEntity.ok(ApiResponse.ok(category, "Danh mục đã được lấy thành công"));
     }
 

@@ -69,6 +69,17 @@ public class CategoryService {
     }
 
     /**
+     * Get category by slug
+     */
+    @Transactional(readOnly = true)
+    public CategoryResponse getCategoryBySlug(String slug) {
+        Category category = categoryRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với slug: " + slug));
+
+        return categoryMapper.toResponseWithChildren(category);
+    }
+
+    /**
      * Create a new category (parent or sub-category)
      */
     @Transactional

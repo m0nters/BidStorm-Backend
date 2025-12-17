@@ -281,6 +281,10 @@ public class AuthService {
         userRepository.save(user);
 
         log.info("Email verified successfully: {}", request.getEmail());
+
+        // Send welcome email
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
+        log.info("Welcome email sent to: {}", user.getEmail());
     }
 
     @Transactional

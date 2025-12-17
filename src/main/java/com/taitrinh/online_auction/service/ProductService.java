@@ -92,20 +92,49 @@ public class ProductService {
 
     /**
      * Get products by category with pagination
+     * Automatically detects if category is parent (has children) or leaf category
+     * - If parent category: returns products from all subcategories
+     * - If leaf category: returns products from that specific category
      */
     @Transactional(readOnly = true)
     public Page<ProductListResponse> getProductsByCategory(Integer categoryId, Integer page, Integer size,
             String sortBy, String sortDirection) {
         log.debug("Getting products by category: {}, page: {}, size: {}", categoryId, page, size);
 
+        // Validate category exists and load with children
+        Category category = categoryRepository.findByIdWithChildren(categoryId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với id: " + categoryId));
+
         Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection)
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<Product> productPage = productRepository.findByCategoryIdOrParentId(categoryId, pageable);
-        Integer highlightMin = configService.getNewProductHighlightMin();
+        Page<Product> productPage;
 
+        // Auto-detect: if category has children, get products from all subcategories
+        if (category.hasChildren()) {
+            log.debug("Category {} is a parent category, fetching products from all subcategories", categoryId);
+
+            // Get all subcategory IDs
+            List<Integer> subcategoryIds = category.getChildren().stream()
+                    .map(Category::getId)
+                    .toList();
+
+            // If no subcategories, return empty page
+            if (subcategoryIds.isEmpty()) {
+                productPage = Page.empty();
+            } else {
+                // Query products from all subcategories
+                productPage = productRepository.findByCategoryIdIn(subcategoryIds, pageable);
+            }
+        } else {
+            // Leaf category: get products directly from this category
+            log.debug("Category {} is a leaf category, fetching products directly", categoryId);
+            productPage = productRepository.findByCategoryId(categoryId, pageable);
+        }
+
+        Integer highlightMin = configService.getNewProductHighlightMin();
         return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
     }
 
@@ -257,6 +286,12 @@ public class ProductService {
         // Validate category exists
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy category với id: " + request.getCategoryId()));
+
+        // Validate that the category is not a parent category (products can only belong
+        // to subcategories)
+        if (category.hasChildren()) {
+            throw new RuntimeException("Không thể tạo sản phẩm cho category cha. Vui lòng chọn một category con.");
+        }
 
         // Validate buyNowPrice if provided
         if (request.getBuyNowPrice() != null &&

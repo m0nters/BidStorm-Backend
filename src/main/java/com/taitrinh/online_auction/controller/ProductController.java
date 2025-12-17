@@ -67,9 +67,12 @@ public class ProductController {
         }
 
         @GetMapping("/category/{categoryId}")
-        @Operation(summary = "Get products by category", description = "Retrieve all products in a specific category (including sub-categories) with pagination")
+        @Operation(summary = "Get products by category", description = "Retrieve products by category with automatic detection. "
+                        + "If the category is a parent category (has subcategories), returns products from all subcategories. "
+                        + "If the category is a leaf category, returns products from that specific category only. "
+                        + "Supports pagination and sorting.")
         public ResponseEntity<ApiResponse<Page<ProductListResponse>>> getProductsByCategory(
-                        @Parameter(description = "Category ID", example = "1") @PathVariable Integer categoryId,
+                        @Parameter(description = "Category ID (works with both parent and leaf categories)", example = "1") @PathVariable Integer categoryId,
 
                         @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
 
@@ -116,8 +119,9 @@ public class ProductController {
                                 "Tìm kiếm sản phẩm đã hoàn thành thành công"));
         }
 
+        /* We don't use this endpoint on product, but the endpoint below */
         @GetMapping("/id/{id}")
-        @Operation(summary = "Get product details by ID", description = "Retrieve complete information about a specific product including images, "
+        @Operation(summary = "Get product details by ID", description = "(For developer only) Retrieve complete information about a specific product including images, "
                         +
                         "seller info, highest bidder info, and description logs")
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(

@@ -43,7 +43,7 @@ CREATE TABLE email_otps (
     id          BIGSERIAL PRIMARY KEY,
     email       VARCHAR(255) NOT NULL,
     otp_code    VARCHAR(6) NOT NULL,
-    purpose     VARCHAR(20) NOT NULL CHECK (purpose IN ('registration', 'password_reset')),
+    purpose     VARCHAR(20) NOT NULL CHECK (purpose IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET')),
     is_used     BOOLEAN NOT NULL DEFAULT false,
     expires_at  TIMESTAMPTZ NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
