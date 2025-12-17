@@ -2,10 +2,13 @@ package com.taitrinh.online_auction.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -127,6 +130,51 @@ public class ProfileController {
                                 PageRequest.of(page, size));
                 return ResponseEntity.ok(ApiResponse.ok(favorites,
                                 "Danh sách sản phẩm đã được yêu thích đã được lấy thành công"));
+        }
+
+        @PostMapping("/favorites/{productId}")
+        @Operation(summary = "Add product to favorites", description = "Add a product to user's favorites/watchlist", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Product added to favorites"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Product already in favorites"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Void>> addFavorite(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID to add to favorites", example = "1") @PathVariable Long productId) {
+                profileService.addFavorite(userDetails.getUserId(), productId);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.ok(null, "Sản phẩm đã được thêm vào danh sách yêu thích"));
+        }
+
+        @DeleteMapping("/favorites/{productId}")
+        @Operation(summary = "Remove product from favorites", description = "Remove a product from user's favorites/watchlist", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Product removed from favorites"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Favorite not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Void>> removeFavorite(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID to remove from favorites", example = "1") @PathVariable Long productId) {
+                profileService.removeFavorite(userDetails.getUserId(), productId);
+                return ResponseEntity.ok(ApiResponse.ok(null, "Sản phẩm đã được xóa khỏi danh sách yêu thích"));
+        }
+
+        @GetMapping("/favorites/check/{productId}")
+        @Operation(summary = "Check if product is favorited", description = "Check whether a specific product is in user's favorites/watchlist", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Check completed successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Boolean>> checkFavorite(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID to check", example = "1") @PathVariable Long productId) {
+                boolean isFavorited = profileService.isFavorited(userDetails.getUserId(), productId);
+                return ResponseEntity.ok(ApiResponse.ok(isFavorited,
+                                isFavorited ? "Sản phẩm đã có trong danh sách yêu thích"
+                                                : "Sản phẩm chưa có trong danh sách yêu thích"));
         }
 
         @GetMapping("/bidding")

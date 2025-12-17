@@ -256,6 +256,57 @@ public class ProfileService {
     }
 
     /**
+     * Add a product to user's favorites
+     */
+    @Transactional
+    public void addFavorite(Long userId, Long productId) {
+        // Validate that product exists
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
+
+        // Check if already favorited
+        if (favoriteRepository.existsByUser_IdAndProduct_Id(userId, productId)) {
+            throw new BadRequestException("Sản phẩm đã có trong danh sách yêu thích");
+        }
+
+        // Get user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        // Create and save favorite
+        Favorite favorite = Favorite.builder()
+                .user(user)
+                .product(product)
+                .build();
+
+        favoriteRepository.save(favorite);
+        log.info("Product {} added to favorites for user {}", productId, userId);
+    }
+
+    /**
+     * Remove a product from user's favorites
+     */
+    @Transactional
+    public void removeFavorite(Long userId, Long productId) {
+        // Check if favorite exists
+        if (!favoriteRepository.existsByUser_IdAndProduct_Id(userId, productId)) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm trong danh sách yêu thích");
+        }
+
+        // Delete the favorite
+        favoriteRepository.deleteByUser_IdAndProduct_Id(userId, productId);
+        log.info("Product {} removed from favorites for user {}", productId, userId);
+    }
+
+    /**
+     * Check if a product is in user's favorites
+     */
+    @Transactional(readOnly = true)
+    public boolean isFavorited(Long userId, Long productId) {
+        return favoriteRepository.existsByUser_IdAndProduct_Id(userId, productId);
+    }
+
+    /**
      * Get products user is currently bidding on
      * Returns products where user has placed bids and auction is still active
      */
