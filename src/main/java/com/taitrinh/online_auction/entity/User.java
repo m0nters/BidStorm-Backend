@@ -91,9 +91,8 @@ public class User {
 
     // Helper methods
     public boolean isSeller() {
-        return role != null && (role.getId() == Role.SELLER ||
-                (role.getId() == Role.BIDDER && sellerExpiresAt != null &&
-                        sellerExpiresAt.isAfter(ZonedDateTime.now())));
+        // ADMIN can also sell (role hierarchy: ADMIN > SELLER)
+        return role != null && (role.getId() == Role.SELLER || role.getId() == Role.ADMIN);
     }
 
     public boolean isAdmin() {

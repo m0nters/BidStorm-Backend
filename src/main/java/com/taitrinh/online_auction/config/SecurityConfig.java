@@ -5,6 +5,10 @@ import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -108,5 +112,29 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.client.RestTemplate restTemplate() {
         return new org.springframework.web.client.RestTemplate();
+    }
+
+    /**
+     * Define role hierarchy: ADMIN > SELLER > BIDDER
+     * This means:
+     * - ADMIN has all permissions of SELLER + BIDDER + their own
+     * - SELLER has all permissions of BIDDER + their own
+     * - BIDDER has only their own permissions
+     */
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        // Use fromHierarchy() factory method (Spring Security 6.x+)
+        return RoleHierarchyImpl.fromHierarchy("ROLE_ADMIN > ROLE_SELLER \n ROLE_SELLER > ROLE_BIDDER");
+    }
+
+    /**
+     * Configure method security to use role hierarchy
+     * This enables @PreAuthorize annotations to respect the hierarchy
+     */
+    @Bean
+    static MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+        expressionHandler.setRoleHierarchy(roleHierarchy);
+        return expressionHandler;
     }
 }

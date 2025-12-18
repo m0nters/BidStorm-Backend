@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -167,7 +168,8 @@ public class ProductController {
         }
 
         @PostMapping
-        @Operation(summary = "Create auction product", description = "Create a new auction product (Seller only). Requires at least 3 images, one must be marked as primary. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @PreAuthorize("hasRole('SELLER')")
+        @Operation(summary = "Create auction product (SELLER only)", description = "Create a new auction product. Requires at least 3 images, one must be marked as primary. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<CreateProductResponse>> createProduct(
                         @Valid @RequestBody CreateProductRequest request,
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -178,7 +180,8 @@ public class ProductController {
         }
 
         @PutMapping("/{id}/description")
-        @Operation(summary = "Update product description", description = "Append additional description to existing product (Seller only). Cannot replace existing description, only append. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @PreAuthorize("hasRole('SELLER')")
+        @Operation(summary = "Update product description (SELLER only)", description = "Append additional description to existing product. Cannot replace existing description, only append. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<Void>> updateProductDescription(
                         @Parameter(description = "Product ID", example = "1") @PathVariable Long id,
 

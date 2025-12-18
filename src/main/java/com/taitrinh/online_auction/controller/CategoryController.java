@@ -3,6 +3,7 @@ package com.taitrinh.online_auction.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -72,7 +73,8 @@ public class CategoryController {
     }
 
     @PostMapping
-    @Operation(summary = "Create category", description = "Create a new parent category or sub-category (max 2 levels)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create category (ADMIN only)", description = "Create a new parent category or sub-category (max 2 levels). Only accessible by administrators.")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
@@ -81,7 +83,8 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update category", description = "Update category name and/or parent")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update category (ADMIN only)", description = "Update category name and/or parent. Only accessible by administrators.")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id,
             @Valid @RequestBody CreateCategoryRequest request) {
@@ -90,7 +93,8 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete category", description = "Delete a category (only if it has no products and no sub-categories)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete category (ADMIN only)", description = "Delete a category (only if it has no products and no sub-categories). Only accessible by administrators.")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(
             @Parameter(description = "Category ID", example = "1") @PathVariable Integer id) {
         categoryService.deleteCategory(id);

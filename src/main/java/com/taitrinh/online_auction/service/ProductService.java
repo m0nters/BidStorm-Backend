@@ -380,7 +380,7 @@ public class ProductService {
 
         // Validate seller owns the product
         if (!product.getSeller().getId().equals(sellerId)) {
-            throw new RuntimeException("Chỉ người bán mới có quyền cập nhật mô tả");
+            throw new RuntimeException("Chỉ người bán sản phẩm này mới có quyền cập nhật mô tả của sản phẩm");
         }
 
         // Validate product is not ended
