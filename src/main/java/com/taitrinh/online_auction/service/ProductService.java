@@ -4,11 +4,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
@@ -47,6 +49,7 @@ public class ProductService {
     private final UserRepository userRepository;
     private final DescriptionLogRepository descriptionLogRepository;
     private final ProductMapper productMapper;
+    private final ApplicationContext applicationContext;
 
     /**
      * Get top 5 products ending soon
@@ -183,14 +186,18 @@ public class ProductService {
      * (by slug)
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProductDetail(Long id) {
+    public ProductDetailResponse getProductDetailById(Long id) {
         log.debug("Getting product detail for id: {}", id);
 
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
 
         // Increment view count (in a separate transaction to avoid locking)
-        incrementViewCount(id);
+        // Call through Spring proxy to ensure REQUIRES_NEW propagation works
+        applicationContext.getBean(ProductService.class).incrementViewCount(id);
+
+        // Update product view count for response
+        product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
         return productMapper.toDetailResponse(product, highlightMin);
@@ -207,7 +214,11 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với slug: " + slug));
 
         // Increment view count (in a separate transaction to avoid locking)
-        incrementViewCount(product.getId());
+        // Call through Spring proxy to ensure REQUIRES_NEW propagation works
+        applicationContext.getBean(ProductService.class).incrementViewCount(product.getId());
+
+        // Update product view count for response
+        product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
         return productMapper.toDetailResponse(product, highlightMin);
@@ -252,15 +263,18 @@ public class ProductService {
     }
 
     /**
-     * Increment view count for a product (async operation)
+     * Increment view count for a product
+     * Uses REQUIRES_NEW to ensure this runs in a separate transaction,
+     * even when called from a read-only transaction
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void incrementViewCount(Long productId) {
         try {
             productRepository.findById(productId).ifPresent(product -> {
                 product.setViewCount(product.getViewCount() + 1);
                 productRepository.save(product);
             });
+            log.debug("View count incremented for product: {}", productId);
         } catch (Exception e) {
             log.error("Error incrementing view count for product: {}", productId, e);
             // Don't throw exception, just log it

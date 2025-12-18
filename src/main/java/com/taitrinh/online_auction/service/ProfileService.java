@@ -312,9 +312,6 @@ public class ProfileService {
      */
     @Transactional(readOnly = true)
     public Page<BiddingProductResponse> getBiddingProducts(Long userId, Pageable pageable) {
-        // This requires a custom query to find products where user has bid history
-        // and product is not ended
-        // For simplicity, we'll query bid history and get unique products
         Page<BidHistory> bidHistories = bidHistoryRepository.findByBidder_IdAndProduct_IsEndedFalse(userId,
                 pageable);
 
@@ -336,7 +333,7 @@ public class ProfileService {
                     .productId(product.getId())
                     .title(product.getTitle())
                     .slug(product.getSlug())
-                    .mainImage(thumbnailUrl)
+                    .thumbnailUrl(thumbnailUrl)
                     .currentPrice(product.getCurrentPrice())
                     .userHighestBid(userHighestBid)
                     .isWinning(isWinning)
@@ -366,7 +363,7 @@ public class ProfileService {
                     .productId(product.getId())
                     .title(product.getTitle())
                     .slug(product.getSlug())
-                    .mainImage(thumbnailUrl)
+                    .thumbnailUrl(thumbnailUrl)
                     .winningBid(product.getCurrentPrice())
                     .sellerId(product.getSeller().getId())
                     .sellerName(product.getSeller().getFullName())

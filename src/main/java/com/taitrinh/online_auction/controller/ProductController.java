@@ -127,7 +127,7 @@ public class ProductController {
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(
                         @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
 
-                ProductDetailResponse product = productService.getProductDetail(id);
+                ProductDetailResponse product = productService.getProductDetailById(id);
                 return ResponseEntity.ok(ApiResponse.ok(product,
                                 "Chi tiết sản phẩm đã được lấy thành công"));
         }

@@ -25,8 +25,8 @@ public class WonProductResponse {
     @Schema(description = "Product slug", example = "iphone-13-pro-max")
     private String slug;
 
-    @Schema(description = "Main product image URL", example = "/uploads/products/image.jpg")
-    private String mainImage;
+    @Schema(description = "Main thumbnail image URL", example = "/uploads/products/image.jpg")
+    private String thumbnailUrl;
 
     @Schema(description = "Winning bid amount", example = "15000000")
     private BigDecimal winningBid;
