@@ -15,19 +15,24 @@ import com.taitrinh.online_auction.entity.EmailOtp.OtpPurpose;
 @Repository
 public interface EmailOtpRepository extends JpaRepository<EmailOtp, Long> {
 
-    @Query("SELECT o FROM EmailOtp o WHERE o.email = :email AND o.otpCode = :otpCode " +
-            "AND o.purpose = :purpose AND o.isUsed = false AND o.expiresAt > :now")
-    Optional<EmailOtp> findValidOtp(
-            @Param("email") String email,
-            @Param("otpCode") String otpCode,
-            @Param("purpose") OtpPurpose purpose,
-            @Param("now") ZonedDateTime now);
+        @Query("SELECT o FROM EmailOtp o WHERE o.email = :email AND o.otpCode = :otpCode " +
+                        "AND o.purpose = :purpose AND o.isUsed = false AND o.expiresAt > :now")
+        Optional<EmailOtp> findValidOtp(
+                        @Param("email") String email,
+                        @Param("otpCode") String otpCode,
+                        @Param("purpose") OtpPurpose purpose,
+                        @Param("now") ZonedDateTime now);
 
-    @Modifying
-    @Query("UPDATE EmailOtp o SET o.isUsed = true WHERE o.email = :email AND o.purpose = :purpose AND o.isUsed = false")
-    void markAllAsUsed(@Param("email") String email, @Param("purpose") OtpPurpose purpose);
+        @Modifying
+        @Query("UPDATE EmailOtp o SET o.isUsed = true WHERE o.email = :email AND o.purpose = :purpose AND o.isUsed = false")
+        void markAllAsUsed(@Param("email") String email, @Param("purpose") OtpPurpose purpose);
 
-    @Modifying
-    @Query("DELETE FROM EmailOtp o WHERE o.expiresAt < :now")
-    void deleteExpired(@Param("now") ZonedDateTime now);
+        /**
+         * Find the most recent OTP for rate limiting check
+         */
+        Optional<EmailOtp> findFirstByEmailAndPurposeOrderByCreatedAtDesc(String email, OtpPurpose purpose);
+
+        @Modifying
+        @Query("DELETE FROM EmailOtp o WHERE o.expiresAt < :now")
+        void deleteExpired(@Param("now") ZonedDateTime now);
 }

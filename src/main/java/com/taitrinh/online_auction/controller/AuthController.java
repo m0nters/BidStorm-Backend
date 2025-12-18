@@ -54,7 +54,7 @@ public class AuthController {
         private String cookieSameSite;
 
         @PostMapping("/register")
-        @Operation(summary = "Register a new user", description = "Register a new bidder account with email verification. Password must be at least 8 characters with uppercase, lowercase, number, and special character.")
+        @Operation(summary = "Register a new user", description = "Register a new bidder account combined with sending OTP to email for email verification. Password must be at least 8 characters with uppercase, lowercase, number, and special character.")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "User registered successfully. OTP sent to email for verification."),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input or email already exists")
@@ -143,7 +143,7 @@ public class AuthController {
         }
 
         @PostMapping("/forgot-password")
-        @Operation(summary = "Request password reset", description = "Send OTP to email for password reset. Returns success even if email doesn't exist (security best practice).")
+        @Operation(summary = "Request password reset", description = "Send OTP to email for password reset (for resend password reset request, use this endpoint too). Returns success even if email doesn't exist (security best practice).")
         @ApiResponses(value = {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "If email exists, OTP has been sent"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input")
@@ -152,7 +152,7 @@ public class AuthController {
                         @Valid @RequestBody ForgotPasswordRequest request) {
                 authService.forgotPassword(request.getEmail());
                 return ResponseEntity.ok(ApiResponse.ok(null,
-                                "Mật khẩu đã được gửi lại thành công"));
+                                "Yêu cầu quên mật khẩu đã được gửi lại thành công"));
         }
 
         @PostMapping("/verify-reset-password-otp")

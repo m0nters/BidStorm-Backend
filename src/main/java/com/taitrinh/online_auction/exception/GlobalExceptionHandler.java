@@ -96,6 +96,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(OtpRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleOtpRateLimit(OtpRateLimitException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Too Many Requests",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+    }
+
     // ========== Spring Security Exceptions ==========
 
     @ExceptionHandler(BadCredentialsException.class)

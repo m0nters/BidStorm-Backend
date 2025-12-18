@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.service;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Random;
 
@@ -28,6 +29,7 @@ import com.taitrinh.online_auction.exception.EmailAlreadyExistsException;
 import com.taitrinh.online_auction.exception.EmailAlreadyVerifiedException;
 import com.taitrinh.online_auction.exception.InvalidOtpException;
 import com.taitrinh.online_auction.exception.InvalidRefreshTokenException;
+import com.taitrinh.online_auction.exception.OtpRateLimitException;
 import com.taitrinh.online_auction.exception.ResourceNotFoundException;
 import com.taitrinh.online_auction.repository.EmailOtpRepository;
 import com.taitrinh.online_auction.repository.RefreshTokenRepository;
@@ -305,6 +307,21 @@ public class AuthService {
     }
 
     private void sendOtp(String email, OtpPurpose purpose) {
+        // Rate limiting: Check if last OTP was sent within 1 minute
+        emailOtpRepository.findFirstByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
+                .ifPresent(lastOtp -> {
+                    ZonedDateTime lastSentAt = lastOtp.getCreatedAt();
+                    ZonedDateTime oneMinuteAgo = ZonedDateTime.now().minusMinutes(1);
+
+                    if (lastSentAt.isAfter(oneMinuteAgo)) {
+                        long secondsRemaining = Duration.between(ZonedDateTime.now(), lastSentAt.plusMinutes(1))
+                                .getSeconds();
+                        throw new OtpRateLimitException(
+                                String.format("Vui lòng đợi %d giây nữa trước khi yêu cầu OTP khác",
+                                        secondsRemaining));
+                    }
+                });
+
         // Mark all previous OTPs as used (security best practice)
         emailOtpRepository.markAllAsUsed(email, purpose);
 
