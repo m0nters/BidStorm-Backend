@@ -105,6 +105,6 @@ public class User {
     }
 
     public boolean canBid() {
-        return getRatingPercentage() >= 80.0 || (positiveRating == 0 && negativeRating == 0);
+        return getRatingPercentage() >= 80.0;
     }
 }

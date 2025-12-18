@@ -186,7 +186,7 @@ public class ProductService {
      * (by slug)
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProductDetailById(Long id) {
+    public ProductDetailResponse getProductDetailById(Long id, Long viewerId) {
         log.debug("Getting product detail for id: {}", id);
 
         Product product = productRepository.findByIdWithDetails(id)
@@ -200,14 +200,28 @@ public class ProductService {
         product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
-        return productMapper.toDetailResponse(product, highlightMin);
+        ProductDetailResponse response = productMapper.toDetailResponse(product, highlightMin);
+
+        // Unmask bidder names if viewer is the seller
+        if (viewerId != null && product.getSeller() != null &&
+                viewerId.equals(product.getSeller().getId())) {
+
+            if (product.getHighestBidder() != null) {
+                response.setHighestBidderName(product.getHighestBidder().getFullName());
+            }
+            if (product.getWinner() != null) {
+                response.setWinnerName(product.getWinner().getFullName());
+            }
+        }
+
+        return response;
     }
 
     /**
      * Get product detail by slug
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProductDetailBySlug(String slug) {
+    public ProductDetailResponse getProductDetailBySlug(String slug, Long viewerId) {
         log.debug("Getting product detail for slug: {}", slug);
 
         Product product = productRepository.findBySlug(slug)
@@ -221,7 +235,21 @@ public class ProductService {
         product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
-        return productMapper.toDetailResponse(product, highlightMin);
+        ProductDetailResponse response = productMapper.toDetailResponse(product, highlightMin);
+
+        // Unmask bidder names if viewer is the seller
+        if (viewerId != null && product.getSeller() != null &&
+                viewerId.equals(product.getSeller().getId())) {
+
+            if (product.getHighestBidder() != null) {
+                response.setHighestBidderName(product.getHighestBidder().getFullName());
+            }
+            if (product.getWinner() != null) {
+                response.setWinnerName(product.getWinner().getFullName());
+            }
+        }
+
+        return response;
     }
 
     /**

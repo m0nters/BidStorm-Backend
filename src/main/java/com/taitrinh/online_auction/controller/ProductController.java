@@ -124,11 +124,13 @@ public class ProductController {
         @GetMapping("/id/{id}")
         @Operation(summary = "Get product details by ID", description = "(For developer only) Retrieve complete information about a specific product including images, "
                         +
-                        "seller info, highest bidder info, and description logs")
+                        "seller info, highest bidder info, and description logs. Authentication is optional - sellers see unmasked bidder names on their products.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(
-                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id,
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-                ProductDetailResponse product = productService.getProductDetailById(id);
+                Long viewerId = userDetails != null ? userDetails.getUserId() : null;
+                ProductDetailResponse product = productService.getProductDetailById(id, viewerId);
                 return ResponseEntity.ok(ApiResponse.ok(product,
                                 "Chi tiết sản phẩm đã được lấy thành công"));
         }
@@ -136,11 +138,13 @@ public class ProductController {
         @GetMapping("/slug/{slug}")
         @Operation(summary = "Get product details by slug", description = "Retrieve complete information about a specific product including images, "
                         +
-                        "seller info, highest bidder info, and description logs")
+                        "seller info, highest bidder info, and description logs. Authentication is optional - sellers see unmasked bidder names on their products.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetailBySlug(
-                        @Parameter(description = "Product slug", example = "iphone-15-pro-max") @PathVariable String slug) {
+                        @Parameter(description = "Product slug", example = "iphone-15-pro-max") @PathVariable String slug,
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-                ProductDetailResponse product = productService.getProductDetailBySlug(slug);
+                Long viewerId = userDetails != null ? userDetails.getUserId() : null;
+                ProductDetailResponse product = productService.getProductDetailBySlug(slug, viewerId);
                 return ResponseEntity.ok(ApiResponse.ok(product,
                                 "Chi tiết sản phẩm đã được lấy thành công"));
         }
