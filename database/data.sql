@@ -1,5 +1,5 @@
 -- Roles
-INSERT INTO roles VALUES (1,'admin'), (2,'seller'), (3,'bidder');
+INSERT INTO roles VALUES (1,'ADMIN'), (2,'SELLER'), (3,'BIDDER');
 
 -- Categories
 INSERT INTO categories (name, slug, parent_id) VALUES
