@@ -1,0 +1,92 @@
+package com.taitrinh.online_auction.mapper;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
+import com.taitrinh.online_auction.dto.comment.CommentResponse;
+import com.taitrinh.online_auction.entity.Comment;
+import com.taitrinh.online_auction.entity.User;
+
+@Mapper(componentModel = "spring")
+public interface CommentMapper {
+
+    @Mapping(target = "productId", source = "comment.product.id")
+    @Mapping(target = "userId", source = "comment.user.id")
+    @Mapping(target = "userName", source = "comment.user", qualifiedByName = "maskUserName")
+    @Mapping(target = "parentId", source = "comment.parent.id")
+    @Mapping(target = "isQuestion", expression = "java(comment.isQuestion())")
+    @Mapping(target = "replies", ignore = true) // Handle manually to avoid recursion issues
+    CommentResponse toResponse(Comment comment);
+
+    // Map replies recursively (manual handling to avoid MapStruct recursion issues)
+    default List<CommentResponse> mapReplies(List<Comment> replies) {
+        if (replies == null || replies.isEmpty()) {
+            return List.of();
+        }
+        return replies.stream()
+                .map(reply -> {
+                    CommentResponse response = toResponse(reply);
+                    response.setReplies(mapReplies(reply.getReplies()));
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Mask user name for privacy (show last 4 characters only)
+    // Unmask if viewerId matches userId (viewing own comment)
+    @Named("maskUserName")
+    default String maskUserName(User user) {
+        if (user == null || user.getFullName() == null) {
+            return null;
+        }
+        String fullName = user.getFullName();
+        if (fullName.length() <= 4) {
+            return "****" + fullName;
+        }
+        String visiblePart = fullName.substring(fullName.length() - 4);
+        return "****" + visiblePart;
+    }
+
+    // Map with conditional unmasking for non-sellers (users see own comments
+    // unmasked)
+    // For sellers, use toResponseUnmasked() instead
+    default CommentResponse toResponseWithViewer(Comment comment, Long viewerId) {
+        CommentResponse response = toResponse(comment);
+
+        // Only unmask if viewing own comment
+        if (comment.getUser() != null && viewerId != null) {
+            boolean isOwnComment = viewerId.equals(comment.getUser().getId());
+            if (isOwnComment) {
+                response.setUserName(comment.getUser().getFullName());
+            }
+        }
+
+        // Recursively handle replies with same logic
+        if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
+            response.setReplies(comment.getReplies().stream()
+                    .map(reply -> toResponseWithViewer(reply, viewerId))
+                    .collect(Collectors.toList()));
+        }
+
+        return response;
+    }
+
+    // Variant that doesn't mask (for seller viewing their own product)
+    default CommentResponse toResponseUnmasked(Comment comment) {
+        CommentResponse response = toResponse(comment);
+        if (comment.getUser() != null) {
+            response.setUserName(comment.getUser().getFullName());
+        }
+        // Also unmask nested replies
+        if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
+            response.setReplies(comment.getReplies().stream()
+                    .map(this::toResponseUnmasked)
+                    .collect(Collectors.toList()));
+        }
+        return response;
+    }
+}

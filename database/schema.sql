@@ -180,23 +180,18 @@ CREATE TABLE description_logs (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 11. Q&A
-CREATE TABLE auction_questions (
-    id          BIGSERIAL PRIMARY KEY,
-    product_id  BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    asker_id    BIGINT NOT NULL REFERENCES users(id),
-    question    TEXT NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    answered_at TIMESTAMPTZ
+-- 11. Comments (Q&A with self-referencing for threaded discussions)
+CREATE TABLE comments (
+    id              BIGSERIAL PRIMARY KEY,
+    product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    user_id         BIGINT NOT NULL REFERENCES users(id),
+    parent_id       BIGINT REFERENCES comments(id) ON DELETE CASCADE,  -- NULL = top-level question
+    content         TEXT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE auction_answers (
-    id           BIGSERIAL PRIMARY KEY,
-    question_id  BIGINT NOT NULL REFERENCES auction_questions(id) ON DELETE CASCADE,
-    answerer_id  BIGINT NOT NULL REFERENCES users(id),
-    answer       TEXT NOT NULL,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+CREATE INDEX idx_comments_product ON comments(product_id, created_at DESC);
+CREATE INDEX idx_comments_thread ON comments(parent_id);  -- for finding replies
 
 -- 12. Reviews (after auction ends)
 CREATE TABLE reviews (

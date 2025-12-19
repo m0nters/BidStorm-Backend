@@ -13,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -24,13 +25,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "auction_questions")
+@Table(name = "comments", indexes = {
+        @Index(name = "idx_comments_product", columnList = "product_id, created_at"),
+        @Index(name = "idx_comments_thread", columnList = "parent_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AuctionQuestion {
+public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,25 +45,42 @@ public class AuctionQuestion {
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asker_id", nullable = false)
-    private User asker;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // Self-referencing: NULL = top-level question, otherwise it's a reply
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Comment parent;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String question;
+    private String content;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private ZonedDateTime createdAt;
 
-    @Column(name = "answered_at")
-    private ZonedDateTime answeredAt;
-
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Bidirectional relationship for replies
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<AuctionAnswer> answers = new ArrayList<>();
+    private List<Comment> replies = new ArrayList<>();
 
-    // Helper method
-    public boolean isAnswered() {
-        return answeredAt != null;
+    // Helper methods
+    public boolean isQuestion() {
+        return parent == null;
+    }
+
+    public boolean isReply() {
+        return parent != null;
+    }
+
+    public void addReply(Comment reply) {
+        replies.add(reply);
+        reply.setParent(this);
+    }
+
+    public void removeReply(Comment reply) {
+        replies.remove(reply);
+        reply.setParent(null);
     }
 }

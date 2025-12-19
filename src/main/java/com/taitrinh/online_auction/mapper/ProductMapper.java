@@ -92,6 +92,52 @@ public interface ProductMapper {
         return user.getRatingPercentage();
     }
 
+    // Map Product to ProductDetailResponse with conditional unmasking for
+    // non-sellers
+    // For sellers, use toDetailResponseUnmasked() instead
+    default ProductDetailResponse toDetailResponseWithViewer(Product product, Integer newProductHighlightMin,
+            Long viewerId) {
+        // First get the base response with masked names
+        ProductDetailResponse response = toDetailResponse(product, newProductHighlightMin);
+
+        if (viewerId == null) {
+            return response;
+        }
+
+        // Unmask highest bidder name if viewer is the highest bidder themselves
+        if (product.getHighestBidder() != null) {
+            boolean isHighestBidder = viewerId.equals(product.getHighestBidder().getId());
+            if (isHighestBidder) {
+                response.setHighestBidderName(product.getHighestBidder().getFullName());
+            }
+        }
+
+        // Unmask winner name if viewer is the winner themselves
+        if (product.getWinner() != null) {
+            boolean isWinner = viewerId.equals(product.getWinner().getId());
+            if (isWinner) {
+                response.setWinnerName(product.getWinner().getFullName());
+            }
+        }
+
+        return response;
+    }
+
+    // Variant that doesn't mask (for seller viewing their own product)
+    default ProductDetailResponse toDetailResponseUnmasked(Product product, Integer newProductHighlightMin) {
+        ProductDetailResponse response = toDetailResponse(product, newProductHighlightMin);
+
+        // Unmask all bidder names
+        if (product.getHighestBidder() != null) {
+            response.setHighestBidderName(product.getHighestBidder().getFullName());
+        }
+        if (product.getWinner() != null) {
+            response.setWinnerName(product.getWinner().getFullName());
+        }
+
+        return response;
+    }
+
     // Map User to UserBasicInfo
     @Named("mapUserBasicInfo")
     default ProductDetailResponse.UserBasicInfo mapUserBasicInfo(User user) {
@@ -147,11 +193,27 @@ public interface ProductMapper {
                 .toList();
     }
 
-    // Map BidHistory to BidHistoryResponse (with masked bidder name)
-    @Mapping(target = "bidderName", source = "bidHistory.bidder", qualifiedByName = "maskUserName")
-    @Mapping(target = "bidAmount", source = "bidHistory.bidAmount", qualifiedByName = "formatCurrency")
-    @Mapping(target = "bidTime", source = "createdAt")
-    BidHistoryResponse toBidHistoryResponse(BidHistory bidHistory);
+    // Map BidHistory to BidHistoryResponse with conditional unmasking
+    default BidHistoryResponse toBidHistoryResponse(BidHistory bidHistory, Long viewerId, boolean isSeller) {
+        if (bidHistory == null) {
+            return null;
+        }
+
+        // Unmask if viewer is seller OR if viewer is the bidder themselves
+        boolean shouldUnmask = isSeller ||
+                (viewerId != null && bidHistory.getBidder() != null &&
+                        viewerId.equals(bidHistory.getBidder().getId()));
+
+        String bidderName = shouldUnmask
+                ? (bidHistory.getBidder() != null ? bidHistory.getBidder().getFullName() : null)
+                : maskUserName(bidHistory.getBidder());
+
+        return BidHistoryResponse.builder()
+                .bidderName(bidderName)
+                .bidAmount(formatCurrency(bidHistory.getBidAmount()))
+                .bidTime(bidHistory.getCreatedAt())
+                .build();
+    }
 
     // Helper method to format currency
     @Named("formatCurrency")
@@ -161,16 +223,6 @@ public interface ProductMapper {
         }
         NumberFormat formatter = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
         return formatter.format(amount);
-    }
-
-    // Map list of BidHistory
-    default List<BidHistoryResponse> toBidHistoryResponseList(List<BidHistory> bidHistories) {
-        if (bidHistories == null) {
-            return List.of();
-        }
-        return bidHistories.stream()
-                .map(this::toBidHistoryResponse)
-                .toList();
     }
 
     // Map Product to CreateProductResponse (after creation)

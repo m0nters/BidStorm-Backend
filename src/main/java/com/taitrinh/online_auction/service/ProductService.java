@@ -200,21 +200,17 @@ public class ProductService {
         product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
-        ProductDetailResponse response = productMapper.toDetailResponse(product, highlightMin);
 
-        // Unmask bidder names if viewer is the seller
-        if (viewerId != null && product.getSeller() != null &&
-                viewerId.equals(product.getSeller().getId())) {
+        // Check if viewer is the seller
+        boolean isSeller = viewerId != null && product.getSeller() != null &&
+                viewerId.equals(product.getSeller().getId());
 
-            if (product.getHighestBidder() != null) {
-                response.setHighestBidderName(product.getHighestBidder().getFullName());
-            }
-            if (product.getWinner() != null) {
-                response.setWinnerName(product.getWinner().getFullName());
-            }
+        // Sellers see all names, users see own names
+        if (isSeller) {
+            return productMapper.toDetailResponseUnmasked(product, highlightMin);
+        } else {
+            return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId);
         }
-
-        return response;
     }
 
     /**
@@ -235,21 +231,17 @@ public class ProductService {
         product.setViewCount(product.getViewCount() + 1);
 
         Integer highlightMin = configService.getNewProductHighlightMin();
-        ProductDetailResponse response = productMapper.toDetailResponse(product, highlightMin);
 
-        // Unmask bidder names if viewer is the seller
-        if (viewerId != null && product.getSeller() != null &&
-                viewerId.equals(product.getSeller().getId())) {
+        // Check if viewer is the seller
+        boolean isSeller = viewerId != null && product.getSeller() != null &&
+                viewerId.equals(product.getSeller().getId());
 
-            if (product.getHighestBidder() != null) {
-                response.setHighestBidderName(product.getHighestBidder().getFullName());
-            }
-            if (product.getWinner() != null) {
-                response.setWinnerName(product.getWinner().getFullName());
-            }
+        // Sellers see all names, users see own names
+        if (isSeller) {
+            return productMapper.toDetailResponseUnmasked(product, highlightMin);
+        } else {
+            return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId);
         }
-
-        return response;
     }
 
     /**
@@ -279,15 +271,22 @@ public class ProductService {
      * Get bid history for a product
      */
     @Transactional(readOnly = true)
-    public List<BidHistoryResponse> getBidHistory(Long productId) {
+    public List<BidHistoryResponse> getBidHistory(Long productId, Long viewerId) {
         log.debug("Getting bid history for product: {}", productId);
 
         // Verify product exists
-        productRepository.findById(productId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
 
         List<BidHistory> bidHistories = bidHistoryRepository.findByProductIdOrderByCreatedAtDesc(productId);
-        return productMapper.toBidHistoryResponseList(bidHistories);
+
+        // Check if viewer is the seller (to unmask all names)
+        boolean isSeller = viewerId != null && product.getSeller() != null &&
+                viewerId.equals(product.getSeller().getId());
+
+        return bidHistories.stream()
+                .map(bh -> productMapper.toBidHistoryResponse(bh, viewerId, isSeller))
+                .toList();
     }
 
     /**
@@ -339,6 +338,11 @@ public class ProductService {
         if (request.getBuyNowPrice() != null &&
                 request.getBuyNowPrice().compareTo(request.getStartingPrice()) <= 0) {
             throw new RuntimeException("Giá mua ngay phải lớn hơn giá khởi điểm");
+        }
+
+        // Validate minimum 3 images
+        if (request.getImages() == null || request.getImages().size() < 3) {
+            throw new RuntimeException("Phải có ít nhất 3 ảnh cho sản phẩm đấu giá");
         }
 
         // Validate at least one image is marked as primary

@@ -55,6 +55,7 @@ public class SecurityConfig {
                         // Public product browsing endpoints (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/config/**").permitAll()
 
                         // Profile endpoints - require authentication

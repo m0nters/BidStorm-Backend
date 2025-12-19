@@ -160,13 +160,14 @@ public class ProductController {
         }
 
         @GetMapping("/{id}/bid-history")
-        @Operation(summary = "Get bid history", description = "Retrieve bid history for a product with masked bidder information. "
-                        +
-                        "Bidder names are partially hidden (e.g., ****Khoa)")
+        @Operation(summary = "Get bid history", description = "Retrieve bid history for a product. "
+                        + "Authentication is optional - bidders see their own full name, sellers see all names unmasked, others see masked names.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<List<BidHistoryResponse>>> getBidHistory(
-                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id,
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-                List<BidHistoryResponse> bidHistory = productService.getBidHistory(id);
+                Long viewerId = userDetails != null ? userDetails.getUserId() : null;
+                List<BidHistoryResponse> bidHistory = productService.getBidHistory(id, viewerId);
                 return ResponseEntity.ok(ApiResponse.ok(bidHistory,
                                 "Lịch sử đấu giá đã được lấy thành công"));
         }
