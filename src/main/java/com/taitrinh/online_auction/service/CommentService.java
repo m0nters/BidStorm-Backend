@@ -83,18 +83,23 @@ public class CommentService {
 
         log.info("Comment created successfully with id: {}", savedComment.getId());
 
-        // Map to response for return and WebSocket broadcast
-        // Determine if viewer is seller for proper unmasking
-        boolean isSeller = product.getSeller() != null && userId.equals(product.getSeller().getId());
-        CommentResponse response = commentMapper.toResponseWithViewer(savedComment, userId, isSeller);
+        // Create neutral response for WebSocket broadcast (no viewerId, not
+        // personalized)
+        // This ensures all viewers receive the same data (isYourself will be false for
+        // everyone)
+        CommentResponse broadcastResponse = commentMapper.toResponseWithViewer(savedComment, null, false);
 
-        // Broadcast real-time notification
-        notificationService.notifyNewComment(product.getId(), response);
+        // Broadcast real-time notification with neutral response
+        notificationService.notifyNewComment(product.getId(), broadcastResponse);
+
+        // Create personalized response for the author to return
+        boolean isSeller = product.getSeller() != null && userId.equals(product.getSeller().getId());
+        CommentResponse personalizedResponse = commentMapper.toResponseWithViewer(savedComment, userId, isSeller);
 
         // TODO: Send email notification to seller if it's a new question
         // TODO: Send email notification to asker and other participants if it's a reply
 
-        return response;
+        return personalizedResponse;
     }
 
     /**
