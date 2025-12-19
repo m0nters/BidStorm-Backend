@@ -64,23 +64,4 @@ public class Comment {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();
-
-    // Helper methods
-    public boolean isQuestion() {
-        return parent == null;
-    }
-
-    public boolean isReply() {
-        return parent != null;
-    }
-
-    public void addReply(Comment reply) {
-        replies.add(reply);
-        reply.setParent(this);
-    }
-
-    public void removeReply(Comment reply) {
-        replies.remove(reply);
-        reply.setParent(null);
-    }
 }

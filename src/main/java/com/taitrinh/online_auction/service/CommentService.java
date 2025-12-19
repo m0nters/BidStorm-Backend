@@ -11,6 +11,10 @@ import com.taitrinh.online_auction.dto.comment.CreateCommentRequest;
 import com.taitrinh.online_auction.entity.Comment;
 import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.exception.CommentNotFoundException;
+import com.taitrinh.online_auction.exception.InvalidCommentStateException;
+import com.taitrinh.online_auction.exception.ResourceNotFoundException;
+import com.taitrinh.online_auction.exception.UnauthorizedCommentActionException;
 import com.taitrinh.online_auction.mapper.CommentMapper;
 import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
@@ -38,31 +42,31 @@ public class CommentService {
 
         // Validate product exists
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", request.getProductId()));
 
         // Validate user exists and is active
         User user = userRepository.findActiveUserById(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng hoặc người dùng không hoạt động"));
+                .orElseThrow(() -> new ResourceNotFoundException("Người dùng", userId));
 
         // Validate product is not ended if it's a new question
         if (request.getParentId() == null && product.getIsEnded()) {
-            throw new RuntimeException("Không thể đặt câu hỏi cho sản phẩm đã kết thúc");
+            throw new InvalidCommentStateException("Không thể đặt câu hỏi cho sản phẩm đã kết thúc");
         }
 
         Comment parent = null;
         if (request.getParentId() != null) {
             // It's a reply - validate parent comment exists
             parent = commentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy comment với id: " + request.getParentId()));
+                    .orElseThrow(() -> new CommentNotFoundException(request.getParentId()));
 
             // Validate parent belongs to the same product
             if (!parent.getProduct().getId().equals(request.getProductId())) {
-                throw new RuntimeException("Comment cha không thuộc về sản phẩm này");
+                throw new InvalidCommentStateException("Comment cha không thuộc về sản phẩm này");
             }
 
             // Only seller can reply to questions about their product
             if (!product.getSeller().getId().equals(userId)) {
-                throw new RuntimeException("Chỉ người bán mới có thể trả lời câu hỏi");
+                throw new UnauthorizedCommentActionException("Chỉ người bán mới có thể trả lời câu hỏi");
             }
         }
 
@@ -81,8 +85,6 @@ public class CommentService {
         // TODO: Send email notification to seller if it's a new question
         // TODO: Send email notification to asker and other participants if it's a reply
 
-        // Return unmasked response for now (can be enhanced to check if viewer is
-        // seller)
         return commentMapper.toResponse(savedComment);
     }
 
@@ -95,7 +97,7 @@ public class CommentService {
 
         // Validate product exists
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
 
         // Get all top-level comments (questions)
         List<Comment> topLevelComments = commentRepository.findTopLevelCommentsByProductId(productId);
@@ -105,16 +107,10 @@ public class CommentService {
                 product.getSeller() != null &&
                 product.getSeller().getId().equals(viewerId);
 
-        // Map to response: sellers see all names, users see own names
-        if (isSeller) {
-            return topLevelComments.stream()
-                    .map(commentMapper::toResponseUnmasked)
-                    .collect(Collectors.toList());
-        } else {
-            return topLevelComments.stream()
-                    .map(comment -> commentMapper.toResponseWithViewer(comment, viewerId))
-                    .collect(Collectors.toList());
-        }
+        // Map to response with unified logic
+        return topLevelComments.stream()
+                .map(comment -> commentMapper.toResponseWithViewer(comment, viewerId, isSeller))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -125,11 +121,11 @@ public class CommentService {
         log.debug("Deleting comment: {} by user: {}", commentId, userId);
 
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy comment với id: " + commentId));
+                .orElseThrow(() -> new CommentNotFoundException(commentId));
 
         // Only the author can delete their own comment
         if (!comment.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền xóa comment này");
+            throw new UnauthorizedCommentActionException("Bạn không có quyền xóa comment này");
         }
 
         // Note: Deleting a parent comment will cascade delete all replies

@@ -22,5 +22,8 @@ public class CommentResponse {
     private String content;
     private ZonedDateTime createdAt;
     private List<CommentResponse> replies; // Nested replies for threaded display
-    private Boolean isQuestion; // true if parent_id is null
+
+    // Helper flags for frontend
+    private Boolean isYourself; // True if viewer is the comment author
+    private Boolean isProductSeller; // True if comment author is the product seller
 }

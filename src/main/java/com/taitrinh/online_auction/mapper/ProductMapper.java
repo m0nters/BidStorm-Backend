@@ -92,47 +92,35 @@ public interface ProductMapper {
         return user.getRatingPercentage();
     }
 
-    // Map Product to ProductDetailResponse with conditional unmasking for
-    // non-sellers
-    // For sellers, use toDetailResponseUnmasked() instead
+    // Map Product to ProductDetailResponse with conditional unmasking based on
+    // viewer context
+    // - Product sellers see all names
+    // - Bidders see their own names
+    // - Others see masked names
     default ProductDetailResponse toDetailResponseWithViewer(Product product, Integer newProductHighlightMin,
-            Long viewerId) {
+            Long viewerId, boolean isSeller) {
         // First get the base response with masked names
         ProductDetailResponse response = toDetailResponse(product, newProductHighlightMin);
 
-        if (viewerId == null) {
+        if (viewerId == null && !isSeller) {
             return response;
         }
 
-        // Unmask highest bidder name if viewer is the highest bidder themselves
+        // Unmask highest bidder name if seller viewing OR if viewer is the highest
+        // bidder themselves
         if (product.getHighestBidder() != null) {
-            boolean isHighestBidder = viewerId.equals(product.getHighestBidder().getId());
-            if (isHighestBidder) {
+            boolean isHighestBidder = viewerId != null && viewerId.equals(product.getHighestBidder().getId());
+            if (isSeller || isHighestBidder) {
                 response.setHighestBidderName(product.getHighestBidder().getFullName());
             }
         }
 
-        // Unmask winner name if viewer is the winner themselves
+        // Unmask winner name if seller viewing OR if viewer is the winner themselves
         if (product.getWinner() != null) {
-            boolean isWinner = viewerId.equals(product.getWinner().getId());
-            if (isWinner) {
+            boolean isWinner = viewerId != null && viewerId.equals(product.getWinner().getId());
+            if (isSeller || isWinner) {
                 response.setWinnerName(product.getWinner().getFullName());
             }
-        }
-
-        return response;
-    }
-
-    // Variant that doesn't mask (for seller viewing their own product)
-    default ProductDetailResponse toDetailResponseUnmasked(Product product, Integer newProductHighlightMin) {
-        ProductDetailResponse response = toDetailResponse(product, newProductHighlightMin);
-
-        // Unmask all bidder names
-        if (product.getHighestBidder() != null) {
-            response.setHighestBidderName(product.getHighestBidder().getFullName());
-        }
-        if (product.getWinner() != null) {
-            response.setWinnerName(product.getWinner().getFullName());
         }
 
         return response;

@@ -205,12 +205,8 @@ public class ProductService {
         boolean isSeller = viewerId != null && product.getSeller() != null &&
                 viewerId.equals(product.getSeller().getId());
 
-        // Sellers see all names, users see own names
-        if (isSeller) {
-            return productMapper.toDetailResponseUnmasked(product, highlightMin);
-        } else {
-            return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId);
-        }
+        // Use unified mapper with isSeller flag
+        return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId, isSeller);
     }
 
     /**
@@ -236,12 +232,8 @@ public class ProductService {
         boolean isSeller = viewerId != null && product.getSeller() != null &&
                 viewerId.equals(product.getSeller().getId());
 
-        // Sellers see all names, users see own names
-        if (isSeller) {
-            return productMapper.toDetailResponseUnmasked(product, highlightMin);
-        } else {
-            return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId);
-        }
+        // Use unified mapper with isSeller flag
+        return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId, isSeller);
     }
 
     /**
