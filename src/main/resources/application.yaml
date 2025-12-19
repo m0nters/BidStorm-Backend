@@ -60,3 +60,14 @@ recaptcha:
 # Application Configuration
 app:
   name: BidStorm
+
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# Logging Configuration
+logging:
+  level:
+    com.taitrinh.online_auction: DEBUG
+    org.springframework.messaging: DEBUG
+    org.springframework.web.socket: DEBUG

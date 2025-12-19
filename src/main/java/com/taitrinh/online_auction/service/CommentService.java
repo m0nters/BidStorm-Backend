@@ -32,6 +32,7 @@ public class CommentService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final CommentNotificationService notificationService;
 
     /**
      * Create a new comment (question or reply)
@@ -82,10 +83,18 @@ public class CommentService {
 
         log.info("Comment created successfully with id: {}", savedComment.getId());
 
+        // Map to response for return and WebSocket broadcast
+        // Determine if viewer is seller for proper unmasking
+        boolean isSeller = product.getSeller() != null && userId.equals(product.getSeller().getId());
+        CommentResponse response = commentMapper.toResponseWithViewer(savedComment, userId, isSeller);
+
+        // Broadcast real-time notification
+        notificationService.notifyNewComment(product.getId(), response);
+
         // TODO: Send email notification to seller if it's a new question
         // TODO: Send email notification to asker and other participants if it's a reply
 
-        return commentMapper.toResponse(savedComment);
+        return response;
     }
 
     /**
@@ -127,6 +136,11 @@ public class CommentService {
         if (!comment.getUser().getId().equals(userId)) {
             throw new UnauthorizedCommentActionException("Bạn không có quyền xóa comment này");
         }
+
+        Long productId = comment.getProduct().getId();
+
+        // Broadcast real-time notification before deleting
+        notificationService.notifyDeleteComment(productId, commentId);
 
         // Note: Deleting a parent comment will cascade delete all replies
         commentRepository.delete(comment);
