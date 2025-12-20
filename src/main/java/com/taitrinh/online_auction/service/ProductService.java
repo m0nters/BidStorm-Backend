@@ -148,11 +148,14 @@ public class ProductService {
     public Page<ProductListResponse> searchProducts(ProductSearchRequest request) {
         log.debug("Searching products with request: {}", request);
 
+        // Map Java property names to database column names for native queries
+        String sortField = mapSortFieldToColumn(request.getSortBy());
+
         Sort.Direction direction = "desc".equalsIgnoreCase(request.getSortDirection())
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
-                Sort.by(direction, request.getSortBy()));
+                Sort.by(direction, sortField));
 
         Page<Product> productPage;
 
@@ -178,6 +181,19 @@ public class ProductService {
 
         Integer highlightMin = configService.getNewProductHighlightMin();
         return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
+    }
+
+    /**
+     * Map Java property names to database column names for native queries
+     */
+    private String mapSortFieldToColumn(String sortBy) {
+        return switch (sortBy) {
+            case "endTime" -> "end_time";
+            case "currentPrice" -> "current_price";
+            case "createdAt" -> "created_at";
+            case "bidCount" -> "bid_count";
+            default -> sortBy;
+        };
     }
 
     /**

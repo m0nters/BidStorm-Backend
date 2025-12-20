@@ -107,11 +107,8 @@ CREATE TABLE products (
     created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    -- MODERN PostgreSQL: generated column → no trigger!
-    search_vector         TSVECTOR GENERATED ALWAYS AS (
-        setweight(to_tsvector('vietnamese', unaccent(coalesce(title, ''))), 'A') ||
-        setweight(to_tsvector('vietnamese', unaccent(coalesce(description, ''))), 'B')
-    ) STORED
+    -- Full-text search vector (populated by trigger)
+    search_vector         TSVECTOR
 );
 
 -- Full-text search indexes
@@ -122,6 +119,21 @@ CREATE INDEX idx_products_created      ON products(created_at DESC);
 CREATE INDEX idx_products_price        ON products(current_price);
 CREATE INDEX idx_products_category     ON products(category_id);
 CREATE INDEX idx_products_active       ON products(is_ended, end_time);
+
+-- Trigger function to automatically update search_vector
+CREATE OR REPLACE FUNCTION products_search_vector_update() RETURNS trigger AS $$
+BEGIN
+    NEW.search_vector := 
+        setweight(to_tsvector('simple', unaccent(coalesce(NEW.title, ''))), 'A') ||
+        setweight(to_tsvector('simple', unaccent(coalesce(NEW.description, ''))), 'B');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER products_search_vector_trigger
+BEFORE INSERT OR UPDATE ON products
+FOR EACH ROW
+EXECUTE FUNCTION products_search_vector_update();
 
 -- 5. Product Images (min 3 + 1 primary)
 CREATE TABLE product_images (

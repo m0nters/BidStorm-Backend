@@ -44,15 +44,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT p FROM Product p WHERE (p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND p.isEnded = false")
         Page<Product> findByCategoryIdOrParentId(@Param("categoryId") Integer categoryId, Pageable pageable);
 
-        // Full-text search by title (case-insensitive, supports Vietnamese without
+        // Full-text search using PostgreSQL tsvector (supports Vietnamese without
         // diacritics)
-        @Query("SELECT p FROM Product p WHERE LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :keyword, '%'))) AND p.isEnded = false")
+        @Query(value = "SELECT p.* FROM products p " +
+                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
+                        "AND p.is_ended = false", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p " +
+                                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
+                                        "AND p.is_ended = false")
         Page<Product> searchByTitle(@Param("keyword") String keyword, Pageable pageable);
 
-        // Full-text search by title and category
-        @Query("SELECT p FROM Product p WHERE LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :keyword, '%'))) "
-                        +
-                        "AND (p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND p.isEnded = false")
+        // Full-text search by title and category using PostgreSQL tsvector
+        @Query(value = "SELECT p.* FROM products p " +
+                        "INNER JOIN categories c ON p.category_id = c.id " +
+                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
+                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
+                        "AND p.is_ended = false", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p " +
+                                        "INNER JOIN categories c ON p.category_id = c.id " +
+                                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
+                                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
+                                        "AND p.is_ended = false")
         Page<Product> searchByTitleAndCategory(@Param("keyword") String keyword,
                         @Param("categoryId") Integer categoryId,
                         Pageable pageable);
