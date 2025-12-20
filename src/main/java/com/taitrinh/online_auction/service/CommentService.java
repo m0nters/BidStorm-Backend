@@ -83,18 +83,21 @@ public class CommentService {
 
         log.info("Comment created successfully with id: {}", savedComment.getId());
 
-        // Create neutral response for WebSocket broadcast (no viewerId, not
-        // personalized)
-        // This ensures all viewers receive the same data (isYourself will be false for
-        // everyone)
-        CommentResponse broadcastResponse = commentMapper.toResponseWithViewer(savedComment, null, false);
+        // Determine if comment author is the product seller
+        boolean isAuthorSeller = product.getSeller() != null && userId.equals(product.getSeller().getId());
 
-        // Broadcast real-time notification with neutral response
-        notificationService.notifyNewComment(product.getId(), broadcastResponse);
+        // 1. Broadcast to PUBLIC channel - masked names (viewerId=null, isSeller=false)
+        CommentResponse publicResponse = commentMapper.toResponseWithViewer(savedComment, null, false);
+        notificationService.notifyNewComment(product.getId(), publicResponse);
 
-        // Create personalized response for the author to return
-        boolean isSeller = product.getSeller() != null && userId.equals(product.getSeller().getId());
-        CommentResponse personalizedResponse = commentMapper.toResponseWithViewer(savedComment, userId, isSeller);
+        // 2. Broadcast to SELLER channel - unmasked names (viewerId=null,
+        // isSeller=true)
+        CommentResponse sellerResponse = commentMapper.toResponseWithViewer(savedComment, null, true);
+        notificationService.notifyNewCommentToSeller(product.getId(), sellerResponse);
+
+        // 3. Return personalized response to HTTP client (author sees their own
+        // unmasked name)
+        CommentResponse personalizedResponse = commentMapper.toResponseWithViewer(savedComment, userId, isAuthorSeller);
 
         // TODO: Send email notification to seller if it's a new question
         // TODO: Send email notification to asker and other participants if it's a reply

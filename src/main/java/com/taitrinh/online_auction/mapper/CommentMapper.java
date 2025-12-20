@@ -80,12 +80,19 @@ public interface CommentMapper {
         response.setIsYourself(isYourself);
         response.setIsProductSeller(isCommentBySeller);
 
-        // Unmask if: 1) product seller viewing, OR 2) comment by seller, OR 3) viewing
-        // own comment
+        // SECURITY: Only set fullUserName for seller viewers (seller channel broadcast)
+        // This prevents leaking real names in public channel
         if (comment.getUser() != null) {
-            if (isProductSeller || isCommentBySeller || isYourself) {
+            if (isProductSeller) {
+                // Seller viewing → always unmask and provide fullUserName
                 response.setUserName(comment.getUser().getFullName());
+                response.setFullUserName(comment.getUser().getFullName());
+            } else if (isCommentBySeller || isYourself) {
+                // Comment by seller or viewing own comment → unmask userName only
+                response.setUserName(comment.getUser().getFullName());
+                // fullUserName stays null for security
             }
+            // else: keep userName masked, fullUserName null
         }
 
         // Recursively handle replies with same logic

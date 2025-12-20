@@ -17,7 +17,8 @@ public class CommentNotificationService {
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
-     * Notify all subscribers about a new comment on a product
+     * Notify all subscribers about a new comment on a product (public channel -
+     * masked names)
      */
     public void notifyNewComment(Long productId, CommentResponse comment) {
         log.debug("Broadcasting new comment for product: {} comment id: {}", productId, comment.getId());
@@ -27,20 +28,38 @@ public class CommentNotificationService {
 
         messagingTemplate.convertAndSend(destination, event);
 
-        log.info("Broadcasted new comment to: {}", destination);
+        log.info("Broadcasted new comment to public channel: {}", destination);
     }
 
     /**
-     * Notify all subscribers about a deleted comment
+     * Notify product seller about a new comment (seller channel - unmasked names)
+     */
+    public void notifyNewCommentToSeller(Long productId, CommentResponse comment) {
+        log.debug("Broadcasting new comment to seller for product: {} comment id: {}", productId, comment.getId());
+
+        CommentEvent event = CommentEvent.newComment(productId, comment);
+        String destination = "/topic/product/" + productId + "/comments/seller";
+
+        messagingTemplate.convertAndSend(destination, event);
+
+        log.info("Broadcasted new comment to seller channel: {}", destination);
+    }
+
+    /**
+     * Notify all subscribers about a deleted comment (both channels)
      */
     public void notifyDeleteComment(Long productId, Long commentId) {
         log.debug("Broadcasting comment deletion for product: {} comment id: {}", productId, commentId);
 
         CommentEvent event = CommentEvent.deleteComment(productId, commentId);
-        String destination = "/topic/product/" + productId + "/comments";
 
-        messagingTemplate.convertAndSend(destination, event);
+        // Broadcast to both public and seller channels
+        String publicDestination = "/topic/product/" + productId + "/comments";
+        String sellerDestination = "/topic/product/" + productId + "/comments/seller";
 
-        log.info("Broadcasted comment deletion to: {}", destination);
+        messagingTemplate.convertAndSend(publicDestination, event);
+        messagingTemplate.convertAndSend(sellerDestination, event);
+
+        log.info("Broadcasted comment deletion to both channels");
     }
 }

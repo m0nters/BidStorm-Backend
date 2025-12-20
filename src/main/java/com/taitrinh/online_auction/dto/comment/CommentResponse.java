@@ -17,7 +17,8 @@ public class CommentResponse {
     private Long id;
     private Long productId;
     private Long userId;
-    private String userName; // Masked for bidders, full for seller viewing their own product
+    private String userName; // Masked for privacy by default
+    private String fullUserName; // Always unmasked name - for sellers/owners to display
     private Long parentId;
     private String content;
     private ZonedDateTime createdAt;
