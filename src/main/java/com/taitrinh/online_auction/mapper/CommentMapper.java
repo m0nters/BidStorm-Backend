@@ -39,13 +39,20 @@ public interface CommentMapper {
                 .collect(Collectors.toList());
     }
 
-    // Helper to check if comment author is the product seller
+    // Helper functions
     default boolean isSeller(Comment comment) {
         return comment != null &&
                 comment.getUser() != null &&
                 comment.getProduct() != null &&
                 comment.getProduct().getSeller() != null &&
                 comment.getUser().getId().equals(comment.getProduct().getSeller().getId());
+    }
+
+    default boolean isYourself(Comment comment, Long viewerId) {
+        return comment != null &&
+                comment.getUser() != null &&
+                viewerId != null &&
+                viewerId.equals(comment.getUser().getId());
     }
 
     // Mask user name for privacy (show last 4 characters only)
@@ -73,26 +80,16 @@ public interface CommentMapper {
 
         // Calculate flags for frontend
         boolean isCommentBySeller = isSeller(comment);
-        boolean isYourself = viewerId != null && comment.getUser() != null &&
-                viewerId.equals(comment.getUser().getId());
+        boolean isCommentByYourself = isYourself(comment, viewerId);
 
         // Set helper flags
-        response.setIsYourself(isYourself);
+        response.setIsYourself(isCommentByYourself);
         response.setIsProductSeller(isCommentBySeller);
 
-        // SECURITY: Only set fullUserName for seller viewers (seller channel broadcast)
-        // This prevents leaking real names in public channel
         if (comment.getUser() != null) {
-            if (isProductSeller) {
-                // Seller viewing → always unmask and provide fullUserName
+            if (isProductSeller || isCommentBySeller || isCommentByYourself) {
                 response.setUserName(comment.getUser().getFullName());
-                response.setFullUserName(comment.getUser().getFullName());
-            } else if (isCommentBySeller || isYourself) {
-                // Comment by seller or viewing own comment → unmask userName only
-                response.setUserName(comment.getUser().getFullName());
-                // fullUserName stays null for security
             }
-            // else: keep userName masked, fullUserName null
         }
 
         // Recursively handle replies with same logic
