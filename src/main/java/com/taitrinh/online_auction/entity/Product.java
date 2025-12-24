@@ -152,6 +152,28 @@ public class Product {
     }
 
     /**
+     * Check if the auction has ended.
+     * Returns true if:
+     * 1. The auction was manually ended (Buy Now, etc.) - isEnded flag is true in
+     * DB
+     * 2. The auction time has expired - endTime has passed
+     * 
+     * This hybrid approach allows:
+     * - Manual early endings via "Buy Now" (sets isEnded = true in database)
+     * - Automatic time-based endings (computed in real-time, no cron jobs needed)
+     * 
+     * @return true if auction has ended (manually or by time), false otherwise
+     */
+    public boolean isEnded() {
+        // If manually ended (buy now, cancelled, etc.), respect the database flag
+        if (isEnded != null && isEnded) {
+            return true;
+        }
+        // Otherwise, check if the auction time has naturally expired
+        return endTime != null && endTime.isBefore(ZonedDateTime.now());
+    }
+
+    /**
      * Check if product has "Buy Now" option (instant purchase price)
      * Allows buyers to skip auction and purchase immediately
      */

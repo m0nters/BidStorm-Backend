@@ -49,7 +49,7 @@ public interface ProductMapper {
     @Mapping(target = "winnerName", source = "product.winner", qualifiedByName = "maskUserName")
     @Mapping(target = "winnerRating", source = "product.winner", qualifiedByName = "getRatingPercentage")
     @Mapping(target = "isAutoExtend", source = "product.autoExtend")
-    @Mapping(target = "isEnded", source = "product.isEnded")
+    @Mapping(target = "isEnded", expression = "java(product.isEnded())")
     @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
     @Mapping(target = "hasBuyNow", expression = "java(product.hasBuyNow())")
     @Mapping(target = "descriptionLogs", source = "product.descriptionLogs", qualifiedByName = "mapDescriptionLogs")
