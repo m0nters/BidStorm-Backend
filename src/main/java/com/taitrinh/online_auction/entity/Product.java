@@ -173,14 +173,6 @@ public class Product {
         return endTime != null && endTime.isBefore(ZonedDateTime.now());
     }
 
-    /**
-     * Check if product has "Buy Now" option (instant purchase price)
-     * Allows buyers to skip auction and purchase immediately
-     */
-    public boolean hasBuyNow() {
-        return buyNowPrice != null && buyNowPrice.compareTo(BigDecimal.ZERO) > 0;
-    }
-
     public boolean shouldAutoExtend(Integer globalExtendTriggerMin) {
         return autoExtend &&
                 endTime != null &&

@@ -26,32 +26,32 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT p FROM Product p " +
                         "LEFT JOIN FETCH p.category c " +
                         "LEFT JOIN FETCH c.parent " +
-                        "WHERE p.endTime > CURRENT_TIMESTAMP ORDER BY p.bidCount DESC")
+                        "WHERE p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false ORDER BY p.bidCount DESC")
         List<Product> findTop5ByBidCount(Pageable pageable);
 
         // Top 5 products with highest price (sorted by current_price descending)
         @Query("SELECT p FROM Product p " +
                         "LEFT JOIN FETCH p.category c " +
                         "LEFT JOIN FETCH c.parent " +
-                        "WHERE p.endTime > CURRENT_TIMESTAMP ORDER BY p.currentPrice DESC")
+                        "WHERE p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false ORDER BY p.currentPrice DESC")
         List<Product> findTop5ByPrice(Pageable pageable);
 
         // Find products by category with pagination
-        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.endTime > CURRENT_TIMESTAMP")
+        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> findByCategoryId(@Param("categoryId") Integer categoryId, Pageable pageable);
 
         // Find products by category or its children with pagination
-        @Query("SELECT p FROM Product p WHERE (p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND p.endTime > CURRENT_TIMESTAMP")
+        @Query("SELECT p FROM Product p WHERE (p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> findByCategoryIdOrParentId(@Param("categoryId") Integer categoryId, Pageable pageable);
 
         // Full-text search using PostgreSQL tsvector (supports Vietnamese without
         // diacritics)
         @Query(value = "SELECT p.* FROM products p " +
                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                        "AND p.endTime > CURRENT_TIMESTAMP", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
+                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
                                         +
                                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                                        "AND p.endTime > CURRENT_TIMESTAMP")
+                                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> searchByTitle(@Param("keyword") String keyword, Pageable pageable);
 
         // Full-text search by title and category using PostgreSQL tsvector
@@ -59,12 +59,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "INNER JOIN categories c ON p.category_id = c.id " +
                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
                         "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                        "AND p.endTime > CURRENT_TIMESTAMP", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
+                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
                                         +
                                         "INNER JOIN categories c ON p.category_id = c.id " +
                                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
                                         "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                                        "AND p.endTime > CURRENT_TIMESTAMP")
+                                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> searchByTitleAndCategory(@Param("keyword") String keyword,
                         @Param("categoryId") Integer categoryId,
                         Pageable pageable);
@@ -76,16 +76,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH c.parent " +
                         "LEFT JOIN FETCH p.highestBidder " +
                         "LEFT JOIN FETCH p.images " +
-                        "WHERE p.id = :id")
+                        "WHERE p.id = :id AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Optional<Product> findByIdWithDetails(@Param("id") Long id);
 
         // Find 5 other products in same category (excluding current product)
-        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.id != :excludeId AND p.endTime > CURRENT_TIMESTAMP ORDER BY p.createdAt DESC")
+        @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.id != :excludeId AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false) ORDER BY p.createdAt DESC")
         List<Product> findRelatedProducts(@Param("categoryId") Integer categoryId, @Param("excludeId") Long excludeId,
                         Pageable pageable);
 
         // Count active products by category
-        @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId AND p.endTime > CURRENT_TIMESTAMP")
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         long countByCategoryId(@Param("categoryId") Integer categoryId);
 
         // Slug-related methods
@@ -106,12 +106,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "LEFT JOIN FETCH p.category c " +
                         "LEFT JOIN FETCH c.parent " +
                         "LEFT JOIN FETCH p.images " +
-                        "WHERE p.winner.id = :userId AND p.endTime > CURRENT_TIMESTAMP " +
+                        "WHERE p.winner.id = :userId AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false) "
+                        +
                         "ORDER BY p.endTime DESC")
         Page<Product> findByWinner_IdAndIsEndedTrue(@Param("userId") Long userId, Pageable pageable);
 
         // Find products by a list of category IDs with pagination (for parent category
         // queries)
-        @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND p.endTime > CURRENT_TIMESTAMP")
+        @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds, Pageable pageable);
 }

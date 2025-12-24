@@ -110,10 +110,6 @@ public class ProductDetailResponse {
     @JsonProperty("isNew")
     private Boolean isNew;
 
-    @Schema(description = "Whether product has buy now option", example = "true")
-    @JsonProperty("hasBuyNow")
-    private Boolean hasBuyNow;
-
     @Schema(description = "Description update logs")
     private List<DescriptionLogResponse> descriptionLogs;
 

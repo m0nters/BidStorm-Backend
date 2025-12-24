@@ -78,7 +78,4 @@ public class ProductListResponse {
 
     @Schema(description = "Whether product is newly posted (within N minutes)", example = "true")
     private Boolean isNew;
-
-    @Schema(description = "Whether product has buy now option", example = "true")
-    private Boolean hasBuyNow;
 }

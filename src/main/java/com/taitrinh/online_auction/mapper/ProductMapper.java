@@ -33,7 +33,6 @@ public interface ProductMapper {
     @Mapping(target = "highestBidderName", source = "product.highestBidder", qualifiedByName = "maskUserName")
     @Mapping(target = "highestBidderRating", source = "product.highestBidder", qualifiedByName = "getRatingPercentage")
     @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
-    @Mapping(target = "hasBuyNow", expression = "java(product.hasBuyNow())")
     ProductListResponse toListResponse(Product product, Integer newProductHighlightMin);
 
     // Map Product to ProductDetailResponse (for detail view)
@@ -51,7 +50,6 @@ public interface ProductMapper {
     @Mapping(target = "isAutoExtend", source = "product.autoExtend")
     @Mapping(target = "isEnded", expression = "java(product.isEnded())")
     @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
-    @Mapping(target = "hasBuyNow", expression = "java(product.hasBuyNow())")
     @Mapping(target = "descriptionLogs", source = "product.descriptionLogs", qualifiedByName = "mapDescriptionLogs")
     ProductDetailResponse toDetailResponse(Product product, Integer newProductHighlightMin);
 
