@@ -196,7 +196,7 @@ public interface ProductMapper {
 
         return BidHistoryResponse.builder()
                 .bidderName(bidderName)
-                .bidAmount(formatCurrency(bidHistory.getBidAmount()))
+                .bidAmount(formatCurrency(bidHistory.getMaxBidAmount()))
                 .bidTime(bidHistory.getCreatedAt())
                 .build();
     }

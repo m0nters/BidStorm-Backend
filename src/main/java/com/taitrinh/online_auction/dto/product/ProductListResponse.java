@@ -28,6 +28,9 @@ public class ProductListResponse {
     @Schema(description = "Main thumbnail image URL", example = "https://example.com/images/product1.jpg")
     private String thumbnailUrl;
 
+    @Schema(description = "Starting price", example = "20000000")
+    private BigDecimal startingPrice;
+
     @Schema(description = "Current price", example = "25000000")
     private BigDecimal currentPrice;
 

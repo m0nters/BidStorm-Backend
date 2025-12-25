@@ -71,8 +71,9 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                 String destination = accessor.getDestination();
 
-                // Check if subscribing to seller-only channel
-                if (destination != null && destination.matches("/topic/product/\\d+/comments/seller")) {
+                // Check if subscribing to seller-only channels (comments or bids)
+                if (destination != null && (destination.matches("/topic/product/\\d+/comments/seller") ||
+                        destination.matches("/topic/product/\\d+/bids/seller"))) {
                     Authentication auth = (Authentication) accessor.getUser();
 
                     if (auth == null || !(auth.getPrincipal() instanceof UserDetailsImpl)) {

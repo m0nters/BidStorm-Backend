@@ -321,10 +321,10 @@ public class ProfileService {
                     : product.getImages().get(0).getUrl();
 
             // Get user's highest bid for this product
-            var userHighestBid = bidHistoryRepository.findTopByProduct_IdAndBidder_IdOrderByBidAmountDesc(
+            var userHighestBid = bidHistoryRepository.findTopByProductIdAndBidderIdOrderByMaxBidAmountDesc(
                     product.getId(), userId)
-                    .map(BidHistory::getBidAmount)
-                    .orElse(bidHistory.getBidAmount());
+                    .map(BidHistory::getMaxBidAmount)
+                    .orElse(bidHistory.getMaxBidAmount());
 
             boolean isWinning = product.getHighestBidder() != null
                     && product.getHighestBidder().getId().equals(userId);

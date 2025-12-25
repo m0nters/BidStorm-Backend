@@ -15,7 +15,7 @@ import com.taitrinh.online_auction.entity.BidHistory;
 @Repository
 public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
 
-        // Get bid history for a product, ordered by bid time descending
+        // Get bid history for a product, ordered by bid time descending (newest first)
         @Query("SELECT b FROM BidHistory b WHERE b.product.id = :productId ORDER BY b.createdAt DESC")
         List<BidHistory> findByProductIdOrderByCreatedAtDesc(@Param("productId") Long productId);
 
@@ -25,11 +25,28 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
                         "ORDER BY b.createdAt DESC")
         Page<BidHistory> findByBidder_IdAndProduct_IsEndedFalse(@Param("bidderId") Long bidderId, Pageable pageable);
 
-        // Find user's highest bid for a specific product
+        // Get current highest max bid for a product (for automatic bidding logic)
+        Optional<BidHistory> findFirstByProductIdOrderByMaxBidAmountDescCreatedAtAsc(
+                        @Param("productId") Long productId);
+
+        // Get all bids from a specific bidder for a product
         @Query("SELECT b FROM BidHistory b " +
                         "WHERE b.product.id = :productId AND b.bidder.id = :bidderId " +
-                        "ORDER BY b.bidAmount DESC")
-        Optional<BidHistory> findTopByProduct_IdAndBidder_IdOrderByBidAmountDesc(
+                        "ORDER BY b.createdAt DESC")
+        List<BidHistory> findByProductIdAndBidderId(
                         @Param("productId") Long productId,
                         @Param("bidderId") Long bidderId);
+
+        // Find user's highest max bid for a specific product
+        @Query("SELECT b FROM BidHistory b " +
+                        "WHERE b.product.id = :productId AND b.bidder.id = :bidderId " +
+                        "ORDER BY b.maxBidAmount DESC, b.createdAt ASC")
+        Optional<BidHistory> findTopByProductIdAndBidderIdOrderByMaxBidAmountDesc(
+                        @Param("productId") Long productId,
+                        @Param("bidderId") Long bidderId);
+
+        // Get all distinct bidders who have bid on a product (for email notifications)
+        @Query("SELECT DISTINCT b.bidder FROM BidHistory b WHERE b.product.id = :productId")
+        List<com.taitrinh.online_auction.entity.User> findDistinctBiddersByProductId(
+                        @Param("productId") Long productId);
 }

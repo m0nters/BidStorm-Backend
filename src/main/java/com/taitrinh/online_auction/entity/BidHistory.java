@@ -23,7 +23,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "bid_history", indexes = {
-        @Index(name = "idx_bid_history_product_time", columnList = "product_id, created_at")
+        @Index(name = "idx_bid_history_product_time", columnList = "product_id, created_at"),
+        @Index(name = "idx_bid_history_product_bidder", columnList = "product_id, bidder_id"),
+        @Index(name = "idx_bid_history_max_bid", columnList = "product_id, max_bid_amount, created_at")
 })
 @Getter
 @Setter
@@ -45,7 +47,10 @@ public class BidHistory {
     private User bidder;
 
     @Column(name = "bid_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal bidAmount;
+    private BigDecimal bidAmount; // Actual bid amount (current price after this bid) - visible to all
+
+    @Column(name = "max_bid_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal maxBidAmount; // User's maximum willing to pay (automatic bidding) - private
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

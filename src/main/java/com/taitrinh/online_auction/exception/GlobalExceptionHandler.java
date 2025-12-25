@@ -132,6 +132,35 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    // ========== Bidding Exceptions ==========
+
+    @ExceptionHandler(InvalidBidAmountException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidBidAmount(InvalidBidAmountException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(UnauthorizedBidException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedBid(UnauthorizedBidException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(ProductEndedException.class)
+    public ResponseEntity<ErrorResponse> handleProductEnded(ProductEndedException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.GONE.value(),
+                "Gone",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.GONE).body(errorResponse);
+    }
+
     // ========== Spring Security Exceptions ==========
 
     @ExceptionHandler(BadCredentialsException.class)

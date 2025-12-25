@@ -60,6 +60,7 @@ recaptcha:
 # Application Configuration
 app:
   name: BidStorm
+  url: ${APP_URL}
 
 # CORS Configuration
 cors:

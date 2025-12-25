@@ -36,4 +36,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      */
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.product.id = :productId AND c.parent IS NULL")
     Long countQuestionsByProductId(@Param("productId") Long productId);
+
+    /**
+     * Find all distinct users who have asked questions on a product (for email
+     * notifications)
+     */
+    @Query("SELECT DISTINCT c.user FROM Comment c WHERE c.product.id = :productId AND c.parent IS NULL")
+    List<com.taitrinh.online_auction.entity.User> findDistinctQuestionAskersByProductId(
+            @Param("productId") Long productId);
 }

@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 import com.taitrinh.online_auction.dto.comment.CommentResponse;
 import com.taitrinh.online_auction.entity.Comment;
 import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.util.NameMaskingUtil;
 
 @Mapper(componentModel = "spring")
 public interface CommentMapper {
@@ -59,15 +60,10 @@ public interface CommentMapper {
     // Unmask if viewerId matches userId (viewing own comment)
     @Named("maskUserName")
     default String maskUserName(User user) {
-        if (user == null || user.getFullName() == null) {
+        if (user == null) {
             return null;
         }
-        String fullName = user.getFullName();
-        if (fullName.length() <= 4) {
-            return "****" + fullName;
-        }
-        String visiblePart = fullName.substring(fullName.length() - 4);
-        return "****" + visiblePart;
+        return NameMaskingUtil.maskName(user.getFullName());
     }
 
     // Map with conditional unmasking based on viewer context

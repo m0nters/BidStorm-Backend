@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 @Configuration
 @OpenAPIDefinition(info = @Info(title = "BidStorm API", version = "1.0", description = "RESTful API for an online auction platform - BidStorm", contact = @Contact(name = "BidStorm Team", email = "support@bidstorm.com")), servers = {
-        @Server(description = "Local Development Server", url = "http://localhost:${server.port}")
+                @Server(description = "Local Development Server", url = "http://localhost:${server.port}")
 })
 @SecurityScheme(name = "Bearer Authentication", type = SecuritySchemeType.HTTP, bearerFormat = "JWT", scheme = "bearer", in = SecuritySchemeIn.HEADER, description = "JWT authentication token. Use the access token received from login endpoint.")
 public class OpenApiConfig {

@@ -16,6 +16,7 @@ import com.taitrinh.online_auction.exception.InvalidCommentStateException;
 import com.taitrinh.online_auction.exception.ResourceNotFoundException;
 import com.taitrinh.online_auction.exception.UnauthorizedCommentActionException;
 import com.taitrinh.online_auction.mapper.CommentMapper;
+import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
@@ -31,8 +32,10 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final BidHistoryRepository bidHistoryRepository;
     private final CommentMapper commentMapper;
     private final CommentNotificationService notificationService;
+    private final EmailService emailService;
 
     /**
      * Create a new comment (question or reply)
@@ -99,8 +102,81 @@ public class CommentService {
         // unmasked name)
         CommentResponse personalizedResponse = commentMapper.toResponseWithViewer(savedComment, userId, isAuthorSeller);
 
-        // TODO: Send email notification to seller if it's a new question
-        // TODO: Send email notification to asker and other participants if it's a reply
+        // 4. Send email notifications
+        if (parent == null) {
+            // New question - send email to seller
+            if (product.getSeller() != null && product.getSeller().getEmail() != null) {
+                emailService.sendNewQuestionToSeller(
+                        product.getSeller().getEmail(),
+                        product.getSeller().getFullName(),
+                        product.getTitle(),
+                        user.getFullName(),
+                        request.getContent(),
+                        product.getSlug(),
+                        savedComment.getId());
+                log.info("Sent new question email to seller for product: {}", product.getId());
+            }
+        } else {
+            // Reply from seller - send email to all question askers and bidders
+            java.util.Set<Long> emailedUserIds = new java.util.HashSet<>();
+
+            // Get the ID of the user who asked the specific question being replied to
+            Long originalAskerId = parent.getUser() != null ? parent.getUser().getId() : null;
+
+            // Get all users who have asked questions on this product
+            List<User> questionAskers = commentRepository.findDistinctQuestionAskersByProductId(product.getId());
+            for (User asker : questionAskers) {
+                // Don't send to seller themselves
+                if (asker != null && asker.getEmail() != null && !asker.getId().equals(userId)) {
+                    // Check if this user is the original asker of the question being replied to
+                    boolean isOriginalAsker = originalAskerId != null && asker.getId().equals(originalAskerId);
+
+                    if (isOriginalAsker) {
+                        // Send personalized "your question was answered" email
+                        emailService.sendSellerReplyNotification(
+                                asker.getEmail(),
+                                asker.getFullName(),
+                                product.getTitle(),
+                                request.getContent(),
+                                product.getSlug(),
+                                savedComment.getId());
+                    } else {
+                        // Send general "new activity on product you're interested in" email
+                        emailService.sendProductActivityNotification(
+                                asker.getEmail(),
+                                asker.getFullName(),
+                                product.getTitle(),
+                                request.getContent(),
+                                product.getSlug(),
+                                savedComment.getId());
+                    }
+                    emailedUserIds.add(asker.getId());
+                }
+            }
+            log.info("Sent seller reply emails to {} question askers for product: {}", emailedUserIds.size(),
+                    product.getId());
+
+            // Get all bidders who have bid on this product
+            List<User> bidders = bidHistoryRepository.findDistinctBiddersByProductId(product.getId());
+            int bidderEmailCount = 0;
+            for (User bidder : bidders) {
+                // Don't send to seller themselves or users who already received email
+                if (bidder != null && bidder.getEmail() != null &&
+                        !bidder.getId().equals(userId) &&
+                        !emailedUserIds.contains(bidder.getId())) {
+                    // Bidders who haven't asked questions get general activity notification
+                    emailService.sendProductActivityNotification(
+                            bidder.getEmail(),
+                            bidder.getFullName(),
+                            product.getTitle(),
+                            request.getContent(),
+                            product.getSlug(),
+                            savedComment.getId());
+                    bidderEmailCount++;
+                }
+            }
+            log.info("Sent seller reply emails to {} bidders for product: {}", bidderEmailCount, product.getId());
+        }
 
         return personalizedResponse;
     }
