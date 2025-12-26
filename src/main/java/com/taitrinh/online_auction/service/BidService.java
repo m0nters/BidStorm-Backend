@@ -268,7 +268,8 @@ public class BidService {
         notificationService.notifyBidRejected(productId, bidderId, broadcastPrice, broadcastBidder);
 
         // Send rejection email
-        emailService.sendBidRejectionEmail(rejectedBidder.getEmail(), rejectedBidder.getFullName(), product.getTitle());
+        emailService.sendBidRejectionEmail(rejectedBidder.getEmail(), rejectedBidder.getFullName(), product.getTitle(),
+                product.getSlug());
 
         log.info("Successfully rejected bidder {} from product {}", bidderId, productId);
     }

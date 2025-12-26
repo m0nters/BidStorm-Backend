@@ -30,10 +30,6 @@ public class EmailService {
 
     /**
      * Send email verification OTP asynchronously
-     * 
-     * @param toEmail           Recipient email address
-     * @param otpCode           The OTP code to send
-     * @param expirationMinutes How long the OTP is valid
      */
     @Async
     public void sendEmailVerificationOTP(String toEmail, String otpCode, Integer expirationMinutes) {
@@ -184,7 +180,7 @@ public class EmailService {
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
-            helper.setSubject(String.format("Welcome to %s!", appName));
+            helper.setSubject(String.format("Chào mừng đến với %s!", appName));
             helper.setText(buildWelcomeEmailContent(fullName), true);
 
             mailSender.send(message);
@@ -463,7 +459,7 @@ public class EmailService {
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
-            helper.setSubject(String.format("%s - Bid placed on %s", appName, productTitle));
+            helper.setSubject(String.format("%s - Xác nhận đấu giá sản phẩm: %s", appName, productTitle));
             helper.setText(
                     buildBidConfirmationEmailContent(bidderName, productTitle, bidAmount, isWinning, productSlug),
                     true);
@@ -620,7 +616,7 @@ public class EmailService {
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
-            helper.setSubject(String.format("%s - New bid on your product: %s", appName, productTitle));
+            helper.setSubject(String.format("%s - Lượt đấu giá mới cho sản phẩm: %s", appName, productTitle));
             helper.setText(buildNewBidToSellerEmailContent(sellerName, productTitle, bidderName, newPrice, productSlug),
                     true);
 
@@ -765,7 +761,7 @@ public class EmailService {
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
-            helper.setSubject(String.format("%s - You've been outbid on %s", appName, productTitle));
+            helper.setSubject(String.format("%s - Bạn đã bị trả giá cao hơn ở sản phẩm: %s", appName, productTitle));
             helper.setText(buildOutbidEmailContent(bidderName, productTitle, newPrice, productSlug), true);
 
             mailSender.send(message);
@@ -900,15 +896,15 @@ public class EmailService {
      * Send bid rejection notification to bidder
      */
     @Async
-    public void sendBidRejectionEmail(String toEmail, String bidderName, String productTitle) {
+    public void sendBidRejectionEmail(String toEmail, String bidderName, String productTitle, String productSlug) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
-            helper.setSubject(String.format("%s - Bid rejected for %s", appName, productTitle));
-            helper.setText(buildBidRejectionEmailContent(bidderName, productTitle), true);
+            helper.setSubject(String.format("%s - Đấu giá bị từ chối cho sản phẩm: %s", appName, productTitle));
+            helper.setText(buildBidRejectionEmailContent(bidderName, productTitle, productSlug), true);
 
             mailSender.send(message);
             log.info("Bid rejection email sent to: {}", toEmail);
@@ -917,7 +913,8 @@ public class EmailService {
         }
     }
 
-    private String buildBidRejectionEmailContent(String bidderName, String productTitle) {
+    private String buildBidRejectionEmailContent(String bidderName, String productTitle, String productSlug) {
+        String productUrl = String.format("%s/san-pham/%s", appUrl, productSlug);
         return String.format(
                 """
                         <!DOCTYPE html>
@@ -1029,7 +1026,7 @@ public class EmailService {
                         </body>
                         </html>
                         """,
-                bidderName, productTitle);
+                bidderName, productTitle, productUrl);
     }
 
     /**
