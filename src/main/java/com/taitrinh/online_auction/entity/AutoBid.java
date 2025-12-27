@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
@@ -38,11 +40,13 @@ public class AutoBid {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Product product;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidder_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User bidder;
 
     @Column(name = "max_amount", nullable = false, precision = 15, scale = 2)

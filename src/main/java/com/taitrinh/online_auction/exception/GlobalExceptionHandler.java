@@ -123,6 +123,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
+    @ExceptionHandler(UnauthorizedSellerException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedSeller(UnauthorizedSellerException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
     @ExceptionHandler(InvalidCommentStateException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCommentState(InvalidCommentStateException ex) {
         ErrorResponse errorResponse = ErrorResponse.of(

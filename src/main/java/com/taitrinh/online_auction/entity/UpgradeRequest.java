@@ -3,6 +3,8 @@ package com.taitrinh.online_auction.entity;
 import java.time.ZonedDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,6 +39,7 @@ public class UpgradeRequest {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidder_id", nullable = false, unique = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User bidder;
 
     @Column(columnDefinition = "TEXT")

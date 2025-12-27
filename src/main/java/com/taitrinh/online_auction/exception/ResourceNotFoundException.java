@@ -9,6 +9,10 @@ public class ResourceNotFoundException extends RuntimeException {
         super(resource + " không tìm thấy với ID: " + id);
     }
 
+    public ResourceNotFoundException(String resource, Integer id) {
+        super(resource + " không tìm thấy với ID: " + id);
+    }
+
     public ResourceNotFoundException(String message) {
         super(message);
     }
