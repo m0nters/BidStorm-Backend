@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.service;
 
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -469,8 +470,10 @@ public class ProductService {
         }
 
         // Append new description to existing one
-        String updatedDescription = product.getDescription() + "\n\n" +
-                "✏️ " + ZonedDateTime.now().toLocalDate() + "\n\n" +
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String updatedDescription = product.getDescription() + "\n"
+                + "=======================================================================================\n\n" + //
+                "✏️ " + ZonedDateTime.now().format(formatter) + "\n\n" + //
                 request.getAdditionalDescription();
         product.setDescription(updatedDescription);
 

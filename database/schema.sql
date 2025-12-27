@@ -185,6 +185,7 @@ CREATE TABLE blocked_bidders (
 );
 
 -- 10. Description append logs (seller bổ sung mô tả)
+-- Thật ra bảng này không cần thiết, nhưng vẫn giữ vì có thể trong tương lai cần tra cứu gì đó chăng?
 CREATE TABLE description_logs (
     id          BIGSERIAL PRIMARY KEY,
     product_id  BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
