@@ -36,6 +36,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
     // Delete favorite by user and product
     void deleteByUser_IdAndProduct_Id(Long userId, Long productId);
 
+    // Delete all favorites for a product (used when deleting product)
+    int deleteByProduct_Id(Long productId);
+
     // Count favorites for a user
     long countByUser_Id(Long userId);
 }

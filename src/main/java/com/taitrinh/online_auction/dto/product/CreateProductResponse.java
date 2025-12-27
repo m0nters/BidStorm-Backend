@@ -24,6 +24,9 @@ public class CreateProductResponse {
     @Schema(description = "Product title", example = "iPhone 15 Pro Max 256GB")
     private String title;
 
+    @Schema(description = "Product slug (URL-friendly identifier)", example = "iphone-15-pro-max-256gb")
+    private String slug;
+
     @Schema(description = "Category ID", example = "5")
     private Integer categoryId;
 

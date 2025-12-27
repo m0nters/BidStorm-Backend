@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,12 +15,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductRequest;
 import com.taitrinh.online_auction.dto.product.CreateProductResponse;
+import com.taitrinh.online_auction.dto.product.CreateProductWithFilesRequest;
 import com.taitrinh.online_auction.dto.product.ProductDetailResponse;
 import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.dto.product.ProductSearchRequest;
@@ -174,7 +178,7 @@ public class ProductController {
 
         @PostMapping
         @PreAuthorize("hasRole('SELLER')")
-        @Operation(summary = "Create auction product (SELLER only)", description = "Create a new auction product. Requires at least 3 images, one must be marked as primary. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @Operation(summary = "[DEV] Create auction product (SELLER only)", description = "(For development only, for production, use /upload endpoint instead) Create a new auction product. Requires at least 3 images, one must be marked as primary. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<CreateProductResponse>> createProduct(
                         @Valid @RequestBody CreateProductRequest request,
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -182,6 +186,50 @@ public class ProductController {
                 CreateProductResponse product = productService.createProduct(request, userDetails.getUserId());
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(ApiResponse.ok(product, "Sản phẩm đã được tạo thành công"));
+        }
+
+        @PostMapping("/upload")
+        @PreAuthorize("hasRole('SELLER')")
+        @Operation(summary = "Create auction product with file uploads (SELLER only)", description = "Create a new auction product with direct file uploads. Accepts multipart/form-data with product data as JSON string and 3-10 image files (JPG/PNG/WEBP, max 5MB each). The first image will automatically be set as primary. Images are uploaded to AWS S3.", security = @SecurityRequirement(name = "Bearer Authentication"))
+        public ResponseEntity<ApiResponse<CreateProductResponse>> createProductWithFileUpload(
+                        @Parameter(description = "Product data (JSON string)", required = true) @RequestPart("productData") String productDataJson,
+                        @Parameter(description = "Product images (3-10 files, JPG/PNG/WEBP, max 5MB each)", required = true) @RequestPart("images") MultipartFile[] images,
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) throws Exception {
+
+                // Parse JSON string to DTO
+                com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                CreateProductWithFilesRequest productData = objectMapper.readValue(productDataJson,
+                                CreateProductWithFilesRequest.class);
+
+                // Validate the DTO
+                jakarta.validation.ValidatorFactory factory = jakarta.validation.Validation
+                                .buildDefaultValidatorFactory();
+                jakarta.validation.Validator validator = factory.getValidator();
+                java.util.Set<jakarta.validation.ConstraintViolation<CreateProductWithFilesRequest>> violations = validator
+                                .validate(productData);
+
+                if (!violations.isEmpty()) {
+                        String errors = violations.stream()
+                                        .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                                        .collect(java.util.stream.Collectors.joining(", "));
+                        throw new RuntimeException("Validation failed: " + errors);
+                }
+
+                CreateProductResponse product = productService.createProductWithFiles(productData, images,
+                                userDetails.getUserId());
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.ok(product, "Sản phẩm đã được tạo thành công với file upload"));
+        }
+
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        @Operation(summary = "Delete product (ADMIN only)", description = "Delete a product and all its associated images from S3 storage. This action cannot be undone. Admin role required.", security = @SecurityRequirement(name = "Bearer Authentication"))
+        public ResponseEntity<ApiResponse<Void>> deleteProduct(
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
+
+                productService.deleteProduct(id);
+                return ResponseEntity.ok(ApiResponse.ok(null, "Sản phẩm đã được xóa thành công"));
         }
 
         @PutMapping("/{id}/description")

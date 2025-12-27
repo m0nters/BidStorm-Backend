@@ -12,10 +12,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductRequest;
 import com.taitrinh.online_auction.dto.product.CreateProductResponse;
+import com.taitrinh.online_auction.dto.product.CreateProductWithFilesRequest;
 import com.taitrinh.online_auction.dto.product.ProductDetailResponse;
 import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.dto.product.ProductSearchRequest;
@@ -30,6 +32,7 @@ import com.taitrinh.online_auction.mapper.ProductMapper;
 import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CategoryRepository;
 import com.taitrinh.online_auction.repository.DescriptionLogRepository;
+import com.taitrinh.online_auction.repository.FavoriteRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
 import com.taitrinh.online_auction.util.SlugUtils;
@@ -50,6 +53,8 @@ public class ProductService {
     private final DescriptionLogRepository descriptionLogRepository;
     private final ProductMapper productMapper;
     private final ApplicationContext applicationContext;
+    private final S3Service s3Service;
+    private final FavoriteRepository favoriteRepository;
 
     /**
      * Get top 5 products ending soon
@@ -476,5 +481,131 @@ public class ProductService {
         productRepository.save(product);
 
         log.info("Product description updated for product: {}", productId);
+    }
+
+    /**
+     * Create a new auction product with file uploads (Seller only)
+     * This method accepts MultipartFile[] instead of URLs
+     */
+    @Transactional
+    public CreateProductResponse createProductWithFiles(CreateProductWithFilesRequest request,
+            MultipartFile[] imageFiles, Long sellerId) {
+        log.debug("Creating product with file uploads for seller: {}", sellerId);
+
+        // Validate seller exists and is active
+        User seller = userRepository.findActiveUserById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán hoặc người bán không hoạt động"));
+
+        // Validate seller has permission to sell
+        if (!seller.isSeller()) {
+            throw new RuntimeException("Người dùng không có quyền bán");
+        }
+
+        // Validate category exists
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với id: " + request.getCategoryId()));
+
+        // Validate that the category is not a parent category
+        if (category.hasChildren()) {
+            throw new RuntimeException("Không thể tạo sản phẩm cho category cha. Vui lòng chọn một category con.");
+        }
+
+        // Validate buyNowPrice if provided
+        if (request.getBuyNowPrice() != null &&
+                request.getBuyNowPrice().compareTo(request.getStartingPrice()) <= 0) {
+            throw new RuntimeException("Giá mua ngay phải lớn hơn giá khởi điểm");
+        }
+
+        // Validate image files
+        if (imageFiles == null || imageFiles.length < 3) {
+            throw new RuntimeException("Phải có ít nhất 3 ảnh cho sản phẩm đấu giá");
+        }
+        if (imageFiles.length > 10) {
+            throw new RuntimeException("Tối đa 10 ảnh cho một sản phẩm");
+        }
+
+        String slug = SlugUtils.toSlug(request.getTitle());
+        slug = SlugUtils.makeUnique(slug, productRepository::existsBySlug);
+
+        // Create product entity
+        Product product = Product.builder()
+                .seller(seller)
+                .category(category)
+                .title(request.getTitle())
+                .slug(slug)
+                .description(request.getDescription())
+                .startingPrice(request.getStartingPrice())
+                .currentPrice(request.getStartingPrice())
+                .buyNowPrice(request.getBuyNowPrice())
+                .priceStep(request.getPriceStep())
+                .autoExtend(request.getAutoExtend())
+                .allowUnratedBidders(request.getAllowUnratedBidders())
+                .endTime(request.getEndTime())
+                .bidCount(0)
+                .viewCount(0)
+                .isEnded(false)
+                .build();
+
+        // Upload images to S3 and create ProductImage entities
+        List<ProductImage> images = new ArrayList<>();
+        for (int i = 0; i < imageFiles.length; i++) {
+            // Upload to S3
+            String imageUrl = s3Service.uploadFile(imageFiles[i], "products");
+
+            // Create ProductImage entity
+            ProductImage productImage = ProductImage.builder()
+                    .product(product)
+                    .url(imageUrl)
+                    .isPrimary(i == 0) // First image is primary
+                    .sortOrder(i + 1) // 1, 2, 3, ...
+                    .build();
+
+            images.add(productImage);
+        }
+
+        product.setImages(images);
+
+        // Save product (cascade will save images)
+        Product savedProduct = productRepository.save(product);
+
+        log.info("Product created successfully with file uploads, id: {}", savedProduct.getId());
+
+        return productMapper.toCreateProductResponse(savedProduct);
+    }
+
+    /**
+     * Delete a product and its associated S3 images (Admin only)
+     * 
+     * @param productId Product ID to delete
+     */
+    @Transactional
+    public void deleteProduct(Long productId) {
+        log.debug("Deleting product: {}", productId);
+
+        // Validate product exists
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + productId));
+
+        // Delete all favorites associated with this product first
+        int deletedFavorites = favoriteRepository.deleteByProduct_Id(productId);
+        log.info("Deleted {} favorites for product: {}", deletedFavorites, productId);
+
+        // Delete all S3 images associated with this product
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            for (ProductImage image : product.getImages()) {
+                try {
+                    s3Service.deleteFile(image.getUrl());
+                    log.info("Deleted S3 image: {}", image.getUrl());
+                } catch (Exception e) {
+                    log.error("Failed to delete S3 image: {}, error: {}", image.getUrl(), e.getMessage());
+                    // Continue deleting other images even if one fails
+                }
+            }
+        }
+
+        // Delete product from database (cascade will delete images, bids, etc.)
+        productRepository.delete(product);
+
+        log.info("Product deleted successfully: {}", productId);
     }
 }

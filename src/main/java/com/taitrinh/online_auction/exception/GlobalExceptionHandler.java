@@ -308,4 +308,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    // ========== File Upload Exceptions ==========
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ErrorResponse> handleFileUploadException(FileUploadException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
 }
