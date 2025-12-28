@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.dto.websocket;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 import com.taitrinh.online_auction.dto.bid.BidResponse;
 
@@ -25,15 +26,18 @@ public class BidEvent {
     private BidResponse bid;
     private BigDecimal currentPrice;
     private String highestBidder;
+    private ZonedDateTime endTime;
 
     // Factory methods for easy event creation
-    public static BidEvent newBid(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder) {
+    public static BidEvent newBid(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder,
+            ZonedDateTime endTime) {
         return BidEvent.builder()
                 .type(EventType.NEW_BID)
                 .productId(productId)
                 .bid(bid)
                 .currentPrice(currentPrice)
                 .highestBidder(highestBidder)
+                .endTime(endTime)
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.service;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -21,10 +22,11 @@ public class BidNotificationService {
     /**
      * Notify all subscribers about a new bid (public channel - masked names)
      */
-    public void notifyNewBid(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder) {
+    public void notifyNewBid(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder,
+            ZonedDateTime endTime) {
         log.debug("Broadcasting new bid for product: {} bidder: {}", productId, bid.getBidderId());
 
-        BidEvent event = BidEvent.newBid(productId, bid, currentPrice, highestBidder);
+        BidEvent event = BidEvent.newBid(productId, bid, currentPrice, highestBidder, endTime);
         String destination = "/topic/product/" + productId + "/bids";
 
         messagingTemplate.convertAndSend(destination, event);
@@ -35,10 +37,11 @@ public class BidNotificationService {
     /**
      * Notify product seller about a new bid (seller channel - unmasked names)
      */
-    public void notifyNewBidToSeller(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder) {
+    public void notifyNewBidToSeller(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder,
+            ZonedDateTime endTime) {
         log.debug("Broadcasting new bid to seller for product: {} bidder: {}", productId, bid.getBidderId());
 
-        BidEvent event = BidEvent.newBid(productId, bid, currentPrice, highestBidder);
+        BidEvent event = BidEvent.newBid(productId, bid, currentPrice, highestBidder, endTime);
         String destination = "/topic/product/" + productId + "/bids/seller";
 
         messagingTemplate.convertAndSend(destination, event);

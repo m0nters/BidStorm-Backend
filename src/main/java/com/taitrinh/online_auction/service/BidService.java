@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.service;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class BidService {
     private final BidMapper bidMapper;
     private final BidNotificationService notificationService;
     private final EmailService emailService;
+    private final ConfigService configService;
 
     /**
      * Place an automatic bid on a product
@@ -129,6 +131,19 @@ public class BidService {
         product.setCurrentPrice(newCurrentPrice);
         product.setHighestBidder(newHighestBidder);
         product.setBidCount(product.getBidCount() + 1);
+
+        // Auto-extend auction if enabled and within trigger window (Requirement 3.1)
+        Integer triggerMin = configService.getAutoExtendTriggerMin();
+        Integer extendByMin = configService.getAutoExtendByMin();
+
+        if (product.shouldAutoExtend(triggerMin)) {
+            ZonedDateTime oldEndTime = product.getEndTime();
+            ZonedDateTime newEndTime = oldEndTime.plusMinutes(extendByMin);
+            product.setEndTime(newEndTime);
+            log.info("Auto-extended auction for product {}. Old end time: {}, New end time: {}",
+                    productId, oldEndTime, newEndTime);
+        }
+
         productRepository.save(product);
 
         log.info("Bid placed successfully. Product {} price updated: {} -> {}, highest bidder: {}",
@@ -147,13 +162,14 @@ public class BidService {
         BidResponse publicResponse = bidMapper.toResponseWithViewer(bidHistory, null, false);
         publicResponse.setIsHighestBidder(isHighestBidder);
         String maskedHighestBidder = NameMaskingUtil.maskName(newHighestBidder.getFullName());
-        notificationService.notifyNewBid(productId, publicResponse, newCurrentPrice, maskedHighestBidder);
+        notificationService.notifyNewBid(productId, publicResponse, newCurrentPrice, maskedHighestBidder,
+                product.getEndTime());
 
         // Seller channel - unmasked names
         BidResponse sellerResponse = bidMapper.toResponseWithViewer(bidHistory, null, true);
         sellerResponse.setIsHighestBidder(isHighestBidder);
         notificationService.notifyNewBidToSeller(productId, sellerResponse, newCurrentPrice,
-                newHighestBidder.getFullName());
+                newHighestBidder.getFullName(), product.getEndTime());
 
         // Send email notifications (async)
         sendBidNotificationEmails(product, user, newCurrentPrice, newHighestBidder,
