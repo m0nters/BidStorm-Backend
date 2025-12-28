@@ -110,9 +110,6 @@ public class ProductDetailResponse {
     @JsonProperty("isNew")
     private Boolean isNew;
 
-    @Schema(description = "Description update logs")
-    private List<DescriptionLogResponse> descriptionLogs;
-
     @Data
     @Builder
     @NoArgsConstructor
@@ -151,19 +148,4 @@ public class ProductDetailResponse {
         private Integer displayOrder;
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Schema(description = "Description update log")
-    public static class DescriptionLogResponse {
-        @Schema(description = "Log ID", example = "1")
-        private Long id;
-
-        @Schema(description = "Updated content", example = "Added warranty information")
-        private String updatedContent;
-
-        @Schema(description = "Update time", example = "2025-12-02T10:00:00Z")
-        private ZonedDateTime updatedAt;
-    }
 }

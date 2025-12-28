@@ -9,6 +9,7 @@ import org.mapstruct.Named;
 
 import com.taitrinh.online_auction.dto.bid.BidResponse;
 import com.taitrinh.online_auction.entity.BidHistory;
+import com.taitrinh.online_auction.entity.User;
 import com.taitrinh.online_auction.util.NameMaskingUtil;
 
 @Mapper(componentModel = "spring")
@@ -74,7 +75,7 @@ public interface BidMapper {
      * Mask bidder name for privacy using centralized utility
      */
     @Named("maskBidderName")
-    default String maskBidderName(com.taitrinh.online_auction.entity.User bidder) {
+    default String maskBidderName(User bidder) {
         if (bidder == null) {
             return null;
         }

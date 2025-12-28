@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.taitrinh.online_auction.entity.Comment;
+import com.taitrinh.online_auction.entity.User;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
@@ -42,6 +43,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * notifications)
      */
     @Query("SELECT DISTINCT c.user FROM Comment c WHERE c.product.id = :productId AND c.parent IS NULL")
-    List<com.taitrinh.online_auction.entity.User> findDistinctQuestionAskersByProductId(
+    List<User> findDistinctQuestionAskersByProductId(
             @Param("productId") Long productId);
 }

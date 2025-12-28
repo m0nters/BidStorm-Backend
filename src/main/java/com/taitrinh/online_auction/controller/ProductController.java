@@ -24,6 +24,7 @@ import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductRequest;
 import com.taitrinh.online_auction.dto.product.CreateProductResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductWithFilesRequest;
+import com.taitrinh.online_auction.dto.product.DescriptionLogResponse;
 import com.taitrinh.online_auction.dto.product.ProductDetailResponse;
 import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.dto.product.ProductSearchRequest;
@@ -244,5 +245,23 @@ public class ProductController {
 
                 productService.updateProductDescription(id, userDetails.getUserId(), request);
                 return ResponseEntity.ok(ApiResponse.ok(null, "Mô tả sản phẩm đã được cập nhật thành công"));
+        }
+
+        @GetMapping("/{id}/description-history")
+        @Operation(summary = "Get product description change history", description = "Retrieve all description changes for a product ordered by date (newest first). This endpoint shows the history of all description updates made by the seller.")
+        public ResponseEntity<ApiResponse<List<DescriptionLogResponse>>> getDescriptionHistory(
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
+
+                List<DescriptionLogResponse> history = productService.getDescriptionHistory(id);
+                return ResponseEntity.ok(ApiResponse.ok(history, "Lịch sử thay đổi mô tả đã được lấy thành công"));
+        }
+
+        @GetMapping("/{id}/description-history/count")
+        @Operation(summary = "Get description edit count", description = "Get the number of times the product description has been edited. Useful for showing edit count badges without fetching the full history.")
+        public ResponseEntity<ApiResponse<Long>> getDescriptionHistoryCount(
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long id) {
+
+                Long count = productService.getDescriptionHistoryCount(id);
+                return ResponseEntity.ok(ApiResponse.ok(count, "Số lần chỉnh sửa mô tả đã được lấy thành công"));
         }
 }

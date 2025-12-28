@@ -15,4 +15,8 @@ public interface DescriptionLogRepository extends JpaRepository<DescriptionLog, 
     // Find all description logs for a product, ordered by created_at DESC
     @Query("SELECT d FROM DescriptionLog d WHERE d.product.id = :productId ORDER BY d.createdAt DESC")
     List<DescriptionLog> findByProductIdOrderByCreatedAtDesc(@Param("productId") Long productId);
+
+    // Count description logs for a product
+    @Query("SELECT COUNT(d) FROM DescriptionLog d WHERE d.product.id = :productId")
+    Long countByProductId(@Param("productId") Long productId);
 }

@@ -13,7 +13,6 @@ import com.taitrinh.online_auction.dto.product.CreateProductResponse;
 import com.taitrinh.online_auction.dto.product.ProductDetailResponse;
 import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.entity.BidHistory;
-import com.taitrinh.online_auction.entity.DescriptionLog;
 import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.ProductImage;
 import com.taitrinh.online_auction.entity.User;
@@ -50,7 +49,6 @@ public interface ProductMapper {
     @Mapping(target = "isAutoExtend", source = "product.autoExtend")
     @Mapping(target = "isEnded", expression = "java(product.isEnded())")
     @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
-    @Mapping(target = "descriptionLogs", source = "product.descriptionLogs", qualifiedByName = "mapDescriptionLogs")
     ProductDetailResponse toDetailResponse(Product product, Integer newProductHighlightMin);
 
     // Helper method to get thumbnail URL (first image or first primary image)
@@ -159,22 +157,6 @@ public interface ProductMapper {
                         .id(img.getId())
                         .imageUrl(img.getUrl())
                         .displayOrder(img.getSortOrder())
-                        .build())
-                .toList();
-    }
-
-    // Map description logs
-    @Named("mapDescriptionLogs")
-    default List<ProductDetailResponse.DescriptionLogResponse> mapDescriptionLogs(List<DescriptionLog> logs) {
-        if (logs == null || logs.isEmpty()) {
-            return List.of();
-        }
-        return logs.stream()
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // Newest first
-                .map(log -> ProductDetailResponse.DescriptionLogResponse.builder()
-                        .id(log.getId())
-                        .updatedContent(log.getContent())
-                        .updatedAt(log.getCreatedAt())
                         .build())
                 .toList();
     }

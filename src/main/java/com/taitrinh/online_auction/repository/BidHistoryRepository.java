@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.taitrinh.online_auction.entity.BidHistory;
+import com.taitrinh.online_auction.entity.User;
 
 @Repository
 public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
@@ -47,6 +48,6 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
 
         // Get all distinct bidders who have bid on a product (for email notifications)
         @Query("SELECT DISTINCT b.bidder FROM BidHistory b WHERE b.product.id = :productId")
-        List<com.taitrinh.online_auction.entity.User> findDistinctBiddersByProductId(
+        List<User> findDistinctBiddersByProductId(
                         @Param("productId") Long productId);
 }

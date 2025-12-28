@@ -19,6 +19,7 @@ import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductRequest;
 import com.taitrinh.online_auction.dto.product.CreateProductResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductWithFilesRequest;
+import com.taitrinh.online_auction.dto.product.DescriptionLogResponse;
 import com.taitrinh.online_auction.dto.product.ProductDetailResponse;
 import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.dto.product.ProductSearchRequest;
@@ -639,5 +640,41 @@ public class ProductService {
         productRepository.delete(product);
 
         log.info("Product deleted successfully: {}", productId);
+    }
+
+    /**
+     * Get description change history for a product
+     */
+    @Transactional(readOnly = true)
+    public List<DescriptionLogResponse> getDescriptionHistory(Long productId) {
+        log.debug("Getting description history for product: {}", productId);
+
+        // Verify product exists
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
+
+        List<DescriptionLog> logs = descriptionLogRepository.findByProductIdOrderByCreatedAtDesc(productId);
+
+        return logs.stream()
+                .map(log -> DescriptionLogResponse.builder()
+                        .id(log.getId())
+                        .updatedContent(log.getContent())
+                        .updatedAt(log.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    /**
+     * Get the count of description changes for a product
+     */
+    @Transactional(readOnly = true)
+    public Long getDescriptionHistoryCount(Long productId) {
+        log.debug("Getting description history count for product: {}", productId);
+
+        // Verify product exists
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
+
+        return descriptionLogRepository.countByProductId(productId);
     }
 }
