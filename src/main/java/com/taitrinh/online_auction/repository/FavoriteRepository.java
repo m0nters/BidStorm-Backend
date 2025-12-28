@@ -18,8 +18,7 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
     // Find all favorites for a user with pagination
     @Query("SELECT f FROM Favorite f " +
             "LEFT JOIN FETCH f.product p " +
-            "LEFT JOIN FETCH p.category c " +
-            "LEFT JOIN FETCH c.parent " +
+            "LEFT JOIN FETCH p.category " +
             "WHERE f.user.id = :userId " +
             "ORDER BY f.createdAt DESC")
     Page<Favorite> findByUser_IdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
