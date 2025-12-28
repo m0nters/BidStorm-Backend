@@ -37,6 +37,7 @@ import com.taitrinh.online_auction.repository.RoleRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
 import com.taitrinh.online_auction.security.JwtUtil;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
+import com.taitrinh.online_auction.service.email.AuthEmailService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final RecaptchaService recaptchaService;
-    private final EmailService emailService;
+    private final AuthEmailService authEmailService;
     private final ApplicationContext applicationContext;
 
     @Value("${jwt.access-token-expiration}")
@@ -285,7 +286,7 @@ public class AuthService {
         log.info("Email verified successfully: {}", request.getEmail());
 
         // Send welcome email
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
+        authEmailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
         log.info("Welcome email sent to: {}", user.getEmail());
     }
 
@@ -341,9 +342,9 @@ public class AuthService {
 
         // Send email with OTP (different template based on purpose)
         if (purpose == OtpPurpose.PASSWORD_RESET) {
-            emailService.sendPasswordResetOtp(email, otpCode, otpExpirationMinutes);
+            authEmailService.sendPasswordResetOtp(email, otpCode, otpExpirationMinutes);
         } else {
-            emailService.sendEmailVerificationOTP(email, otpCode, otpExpirationMinutes);
+            authEmailService.sendEmailVerificationOTP(email, otpCode, otpExpirationMinutes);
         }
 
         log.info("OTP sent to: {}", email);

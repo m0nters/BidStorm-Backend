@@ -115,4 +115,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // queries)
         @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
         Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds, Pageable pageable);
+
+        // Find products that ended between two timestamps (for cron job processing)
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.seller " +
+                        "LEFT JOIN FETCH p.highestBidder " +
+                        "WHERE p.isEnded = false AND p.endTime BETWEEN :startTime AND :endTime")
+        List<Product> findByIsEndedFalseAndEndTimeBetween(
+                        @Param("startTime") java.time.ZonedDateTime startTime,
+                        @Param("endTime") java.time.ZonedDateTime endTime);
 }

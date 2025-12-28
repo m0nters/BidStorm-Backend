@@ -211,9 +211,6 @@ public class ProductService {
         Product product = productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", id));
 
-        // Lazy update: persist isEnded flag to database if time has expired
-        applicationContext.getBean(ProductService.class).lazyUpdateEndedFlag(product);
-
         // Increment view count (in a separate transaction to avoid locking)
         // Call through Spring proxy to ensure REQUIRES_NEW propagation works
         applicationContext.getBean(ProductService.class).incrementViewCount(id);
@@ -238,9 +235,6 @@ public class ProductService {
 
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", slug));
-
-        // Lazy update: persist isEnded flag to database if time has expired
-        applicationContext.getBean(ProductService.class).lazyUpdateEndedFlag(product);
 
         // Increment view count (in a separate transaction to avoid locking)
         // Call through Spring proxy to ensure REQUIRES_NEW propagation works
@@ -299,32 +293,6 @@ public class ProductService {
         return bidHistories.stream()
                 .map(bh -> productMapper.toBidHistoryResponse(bh, viewerId, isSeller))
                 .toList();
-    }
-
-    /**
-     * Lazy update: Persist isEnded flag to database when auction time expires
-     * This ensures database consistency without requiring cron jobs
-     * Uses REQUIRES_NEW to ensure this runs in a separate transaction
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void lazyUpdateEndedFlag(Product product) {
-        try {
-            // Only update if:
-            // 1. Database flag is currently false (not manually ended)
-            // 2. End time has passed
-            if (!product.getIsEnded() && product.getEndTime() != null &&
-                    product.getEndTime().isBefore(ZonedDateTime.now())) {
-
-                productRepository.findById(product.getId()).ifPresent(p -> {
-                    p.setIsEnded(true);
-                    productRepository.save(p);
-                    log.info("Auction ended by time for product: {}", p.getId());
-                });
-            }
-        } catch (Exception e) {
-            log.error("Error updating isEnded flag for product: {}", product.getId(), e);
-            // Don't throw exception to avoid breaking the main flow
-        }
     }
 
     /**
