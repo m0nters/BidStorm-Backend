@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -51,9 +50,4 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
         @Query("SELECT DISTINCT b.bidder FROM BidHistory b WHERE b.product.id = :productId")
         List<User> findDistinctBiddersByProductId(
                         @Param("productId") Long productId);
-
-        // Get winning bid (highest bid amount) for a product
-        // If multiple bids have same amount, earliest bid wins
-        @EntityGraph(attributePaths = { "bidder" })
-        Optional<BidHistory> findFirstByProduct_IdOrderByBidAmountDescCreatedAtAsc(Long productId);
 }

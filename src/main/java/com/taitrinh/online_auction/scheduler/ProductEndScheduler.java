@@ -7,9 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.taitrinh.online_auction.entity.BidHistory;
 import com.taitrinh.online_auction.entity.Product;
-import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.service.email.ProductEmailService;
 
@@ -27,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ProductEndScheduler {
 
     private final ProductRepository productRepository;
-    private final BidHistoryRepository bidHistoryRepository;
     private final ProductEmailService productEmailService;
 
     /**
@@ -70,31 +67,32 @@ public class ProductEndScheduler {
 
         log.info("Product {} marked as ended", product.getId());
 
-        // Check if there are any bids
-        bidHistoryRepository.findFirstByProduct_IdOrderByBidAmountDescCreatedAtAsc(product.getId())
-                .ifPresentOrElse(
-                        winningBid -> handleProductWithWinner(product, winningBid),
-                        () -> handleProductWithoutWinner(product));
+        // Check if there is a winning bidder
+        if (product.getHighestBidder() != null) {
+            handleProductWithWinner(product);
+        } else {
+            handleProductWithoutWinner(product);
+        }
     }
 
-    private void handleProductWithWinner(Product product, BidHistory winningBid) {
-        log.info("Product {} ended with winner: {} (bid: {})",
+    private void handleProductWithWinner(Product product) {
+        log.info("Product {} ended with winner: {} (final price: {})",
                 product.getId(),
-                winningBid.getBidder().getFullName(),
-                winningBid.getBidAmount());
+                product.getHighestBidder().getFullName(),
+                product.getCurrentPrice());
 
         // Set the winner and save to database
-        product.setWinner(winningBid.getBidder());
+        product.setWinner(product.getHighestBidder());
         productRepository.save(product);
 
-        log.info("Winner {} assigned to product {}", winningBid.getBidder().getId(), product.getId());
+        log.info("Winner {} assigned to product {}", product.getHighestBidder().getId(), product.getId());
 
         // Send winner email to bidder
         productEmailService.sendWinnerNotificationToBidder(
-                winningBid.getBidder().getEmail(),
-                winningBid.getBidder().getFullName(),
+                product.getHighestBidder().getEmail(),
+                product.getHighestBidder().getFullName(),
                 product.getTitle(),
-                winningBid.getBidAmount(),
+                product.getCurrentPrice(),
                 product.getSlug());
 
         // Send winner email to seller
@@ -102,8 +100,8 @@ public class ProductEndScheduler {
                 product.getSeller().getEmail(),
                 product.getSeller().getFullName(),
                 product.getTitle(),
-                winningBid.getBidder().getFullName(),
-                winningBid.getBidAmount(),
+                product.getHighestBidder().getFullName(),
+                product.getCurrentPrice(),
                 product.getSlug());
 
         log.info("Winner notifications sent for product {}", product.getId());
