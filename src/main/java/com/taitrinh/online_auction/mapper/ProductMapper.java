@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductResponse;
@@ -16,9 +17,13 @@ import com.taitrinh.online_auction.entity.BidHistory;
 import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.ProductImage;
 import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.service.ConfigService;
 
-@Mapper(componentModel = "spring")
-public interface ProductMapper {
+@Mapper(componentModel = "spring", uses = ConfigService.class)
+public abstract class ProductMapper {
+
+    @Autowired
+    protected ConfigService configService;
 
     // Map Product to ProductListResponse (for lists)
     @Mapping(target = "thumbnailUrl", source = "product", qualifiedByName = "getThumbnailUrl")
@@ -31,8 +36,8 @@ public interface ProductMapper {
     @Mapping(target = "highestBidderId", source = "product.highestBidder.id")
     @Mapping(target = "highestBidderName", source = "product.highestBidder", qualifiedByName = "maskUserName")
     @Mapping(target = "highestBidderRating", source = "product.highestBidder", qualifiedByName = "getRatingPercentage")
-    @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
-    ProductListResponse toListResponse(Product product, Integer newProductHighlightMin);
+    @Mapping(target = "isNew", expression = "java(product.isNew(configService.getNewProductHighlightMin()))")
+    public abstract ProductListResponse toListResponse(Product product);
 
     // Map Product to ProductDetailResponse (for detail view)
     @Mapping(target = "images", source = "product.images", qualifiedByName = "mapImages")
@@ -48,12 +53,12 @@ public interface ProductMapper {
     @Mapping(target = "winnerRating", source = "product.winner", qualifiedByName = "getRatingPercentage")
     @Mapping(target = "isAutoExtend", source = "product.autoExtend")
     @Mapping(target = "isEnded", expression = "java(product.isEnded())")
-    @Mapping(target = "isNew", expression = "java(product.isNew(newProductHighlightMin))")
-    ProductDetailResponse toDetailResponse(Product product, Integer newProductHighlightMin);
+    @Mapping(target = "isNew", expression = "java(product.isNew(configService.getNewProductHighlightMin()))")
+    public abstract ProductDetailResponse toDetailResponse(Product product);
 
     // Helper method to get thumbnail URL (first image or first primary image)
     @Named("getThumbnailUrl")
-    default String getThumbnailUrl(Product product) {
+    public String getThumbnailUrl(Product product) {
         if (product.getImages() == null || product.getImages().isEmpty()) {
             return null;
         }
@@ -67,7 +72,7 @@ public interface ProductMapper {
 
     // Helper method to mask user name (show only last 3-4 characters)
     @Named("maskUserName")
-    default String maskUserName(User user) {
+    public String maskUserName(User user) {
         if (user == null || user.getFullName() == null) {
             return null;
         }
@@ -81,7 +86,7 @@ public interface ProductMapper {
 
     // Helper method to get rating percentage
     @Named("getRatingPercentage")
-    default Double getRatingPercentage(User user) {
+    public Double getRatingPercentage(User user) {
         if (user == null) {
             return null;
         }
@@ -93,10 +98,10 @@ public interface ProductMapper {
     // - Product sellers see all names
     // - Bidders see their own names
     // - Others see masked names
-    default ProductDetailResponse toDetailResponseWithViewer(Product product, Integer newProductHighlightMin,
+    public ProductDetailResponse toDetailResponseWithViewer(Product product,
             Long viewerId, boolean isSeller) {
         // First get the base response with masked names
-        ProductDetailResponse response = toDetailResponse(product, newProductHighlightMin);
+        ProductDetailResponse response = toDetailResponse(product);
 
         if (viewerId == null && !isSeller) {
             return response;
@@ -124,7 +129,7 @@ public interface ProductMapper {
 
     // Map User to UserBasicInfo
     @Named("mapUserBasicInfo")
-    default ProductDetailResponse.UserBasicInfo mapUserBasicInfo(User user) {
+    public ProductDetailResponse.UserBasicInfo mapUserBasicInfo(User user) {
         if (user == null) {
             return null;
         }
@@ -139,7 +144,7 @@ public interface ProductMapper {
 
     // Map images
     @Named("mapImages")
-    default List<ProductDetailResponse.ProductImageResponse> mapImages(List<ProductImage> images) {
+    public List<ProductDetailResponse.ProductImageResponse> mapImages(List<ProductImage> images) {
         if (images == null || images.isEmpty()) {
             return List.of();
         }
@@ -162,7 +167,7 @@ public interface ProductMapper {
     }
 
     // Map BidHistory to BidHistoryResponse with conditional unmasking
-    default BidHistoryResponse toBidHistoryResponse(BidHistory bidHistory, Long viewerId, boolean isSeller) {
+    public BidHistoryResponse toBidHistoryResponse(BidHistory bidHistory, Long viewerId, boolean isSeller) {
         if (bidHistory == null) {
             return null;
         }
@@ -185,7 +190,7 @@ public interface ProductMapper {
 
     // Helper method to format currency
     @Named("formatCurrency")
-    default String formatCurrency(java.math.BigDecimal amount) {
+    public String formatCurrency(java.math.BigDecimal amount) {
         if (amount == null) {
             return "0";
         }
@@ -200,11 +205,11 @@ public interface ProductMapper {
     @Mapping(target = "sellerName", source = "seller.fullName")
     @Mapping(target = "isAutoExtend", source = "autoExtend")
     @Mapping(target = "imageCount", source = "images", qualifiedByName = "getImageCount")
-    CreateProductResponse toCreateProductResponse(Product product);
+    public abstract CreateProductResponse toCreateProductResponse(Product product);
 
     // Helper method to get image count
     @Named("getImageCount")
-    default Integer getImageCount(List<ProductImage> images) {
+    public Integer getImageCount(List<ProductImage> images) {
         return images != null ? images.size() : 0;
     }
 }

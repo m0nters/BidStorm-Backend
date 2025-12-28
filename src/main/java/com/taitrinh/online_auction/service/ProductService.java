@@ -52,7 +52,6 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final BidHistoryRepository bidHistoryRepository;
-    private final ConfigService configService;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final DescriptionLogRepository descriptionLogRepository;
@@ -68,9 +67,8 @@ public class ProductService {
         log.debug("Getting top 5 products ending soon");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5EndingSoon(pageable);
-        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
-                .map(product -> productMapper.toListResponse(product, highlightMin))
+                .map(productMapper::toListResponse)
                 .toList();
     }
 
@@ -82,9 +80,8 @@ public class ProductService {
         log.debug("Getting top 5 products by bid count");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5ByBidCount(pageable);
-        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
-                .map(product -> productMapper.toListResponse(product, highlightMin))
+                .map(productMapper::toListResponse)
                 .toList();
     }
 
@@ -96,9 +93,8 @@ public class ProductService {
         log.debug("Getting top 5 products by price");
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findTop5ByPrice(pageable);
-        Integer highlightMin = configService.getNewProductHighlightMin();
         return products.stream()
-                .map(product -> productMapper.toListResponse(product, highlightMin))
+                .map(productMapper::toListResponse)
                 .toList();
     }
 
@@ -146,8 +142,7 @@ public class ProductService {
             productPage = productRepository.findByCategoryId(categoryId, pageable);
         }
 
-        Integer highlightMin = configService.getNewProductHighlightMin();
-        return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
+        return productPage.map(productMapper::toListResponse);
     }
 
     /**
@@ -188,8 +183,7 @@ public class ProductService {
             productPage = productRepository.findAll(pageable);
         }
 
-        Integer highlightMin = configService.getNewProductHighlightMin();
-        return productPage.map(product -> productMapper.toListResponse(product, highlightMin));
+        return productPage.map(productMapper::toListResponse);
     }
 
     /**
@@ -227,14 +221,12 @@ public class ProductService {
         // Update product view count for response
         product.setViewCount(product.getViewCount() + 1);
 
-        Integer highlightMin = configService.getNewProductHighlightMin();
-
         // Check if viewer is the seller
         boolean isSeller = viewerId != null && product.getSeller() != null &&
                 viewerId.equals(product.getSeller().getId());
 
         // Use unified mapper with isSeller flag
-        return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId, isSeller);
+        return productMapper.toDetailResponseWithViewer(product, viewerId, isSeller);
     }
 
     /**
@@ -257,14 +249,12 @@ public class ProductService {
         // Update product view count for response
         product.setViewCount(product.getViewCount() + 1);
 
-        Integer highlightMin = configService.getNewProductHighlightMin();
-
         // Check if viewer is the seller
         boolean isSeller = viewerId != null && product.getSeller() != null &&
                 viewerId.equals(product.getSeller().getId());
 
         // Use unified mapper with isSeller flag
-        return productMapper.toDetailResponseWithViewer(product, highlightMin, viewerId, isSeller);
+        return productMapper.toDetailResponseWithViewer(product, viewerId, isSeller);
     }
 
     /**
@@ -283,10 +273,9 @@ public class ProductService {
 
         Pageable pageable = PageRequest.of(0, 5);
         List<Product> products = productRepository.findRelatedProducts(categoryId, productId, pageable);
-        Integer highlightMin = configService.getNewProductHighlightMin();
 
         return products.stream()
-                .map(p -> productMapper.toListResponse(p, highlightMin))
+                .map(productMapper::toListResponse)
                 .toList();
     }
 
