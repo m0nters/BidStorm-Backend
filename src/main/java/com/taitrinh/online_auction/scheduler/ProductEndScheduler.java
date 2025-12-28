@@ -71,7 +71,7 @@ public class ProductEndScheduler {
         log.info("Product {} marked as ended", product.getId());
 
         // Check if there are any bids
-        bidHistoryRepository.findTopByProductIdOrderByBidAmountDesc(product.getId())
+        bidHistoryRepository.findFirstByProduct_IdOrderByBidAmountDescCreatedAtAsc(product.getId())
                 .ifPresentOrElse(
                         winningBid -> handleProductWithWinner(product, winningBid),
                         () -> handleProductWithoutWinner(product));
@@ -82,6 +82,12 @@ public class ProductEndScheduler {
                 product.getId(),
                 winningBid.getBidder().getFullName(),
                 winningBid.getBidAmount());
+
+        // Set the winner and save to database
+        product.setWinner(winningBid.getBidder());
+        productRepository.save(product);
+
+        log.info("Winner {} assigned to product {}", winningBid.getBidder().getId(), product.getId());
 
         // Send winner email to bidder
         productEmailService.sendWinnerNotificationToBidder(

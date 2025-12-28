@@ -52,9 +52,7 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
                         @Param("productId") Long productId);
 
         // Get winning bid (highest bid amount) for a product
-        @Query("SELECT b FROM BidHistory b " +
-                        "LEFT JOIN FETCH b.bidder " +
-                        "WHERE b.product.id = :productId " +
-                        "ORDER BY b.bidAmount DESC")
-        java.util.Optional<BidHistory> findTopByProductIdOrderByBidAmountDesc(@Param("productId") Long productId);
+        // If multiple bids have same amount, earliest bid wins
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "bidder" })
+        Optional<BidHistory> findFirstByProduct_IdOrderByBidAmountDescCreatedAtAsc(Long productId);
 }
