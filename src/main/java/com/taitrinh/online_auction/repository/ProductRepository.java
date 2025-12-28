@@ -48,10 +48,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // diacritics)
         @Query(value = "SELECT p.* FROM products p " +
                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
+                        "AND (p.end_time > CURRENT_TIMESTAMP AND p.is_ended = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
                                         +
                                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
+                                        "AND (p.end_time > CURRENT_TIMESTAMP AND p.is_ended = false)")
         Page<Product> searchByTitle(@Param("keyword") String keyword, Pageable pageable);
 
         // Full-text search by title and category using PostgreSQL tsvector
@@ -59,12 +59,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         "INNER JOIN categories c ON p.category_id = c.id " +
                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
                         "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
+                        "AND (p.end_time > CURRENT_TIMESTAMP AND p.is_ended = false)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
                                         +
                                         "INNER JOIN categories c ON p.category_id = c.id " +
                                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
                                         "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                                        "AND (p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false)")
+                                        "AND (p.end_time > CURRENT_TIMESTAMP AND p.is_ended = false)")
         Page<Product> searchByTitleAndCategory(@Param("keyword") String keyword,
                         @Param("categoryId") Integer categoryId,
                         Pageable pageable);
