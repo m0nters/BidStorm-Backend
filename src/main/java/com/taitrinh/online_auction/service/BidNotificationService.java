@@ -70,4 +70,34 @@ public class BidNotificationService {
 
         log.info("Broadcasted bid rejection to both channels");
     }
+
+    /**
+     * Notify public channel that product was bought via Buy Now (masked names)
+     */
+    public void notifyProductBoughtNowToPublic(Long productId, BidResponse bid, BigDecimal finalPrice,
+            String winnerName) {
+        log.debug("Broadcasting buy now event to public channel for product: {}", productId);
+
+        BidEvent event = BidEvent.productBoughtNow(productId, bid, finalPrice, winnerName);
+        String destination = "/topic/product/" + productId + "/bids";
+
+        messagingTemplate.convertAndSend(destination, event);
+
+        log.info("Broadcasted buy now to public channel: {}", destination);
+    }
+
+    /**
+     * Notify seller channel that product was bought via Buy Now (unmasked names)
+     */
+    public void notifyProductBoughtNowToSeller(Long productId, BidResponse bid, BigDecimal finalPrice,
+            String winnerName) {
+        log.debug("Broadcasting buy now event to seller channel for product: {}", productId);
+
+        BidEvent event = BidEvent.productBoughtNow(productId, bid, finalPrice, winnerName);
+        String destination = "/topic/product/" + productId + "/bids/seller";
+
+        messagingTemplate.convertAndSend(destination, event);
+
+        log.info("Broadcasted buy now to seller channel: {}", destination);
+    }
 }

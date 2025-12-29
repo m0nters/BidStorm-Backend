@@ -64,4 +64,14 @@ public class BidController {
         bidService.rejectBidder(productId, bidderId, userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "Đã từ chối người đấu giá thành công"));
     }
+
+    @Operation(summary = "Buy product now", description = "Instantly purchase product at buy now price. Ends auction immediately and sets buyer as winner.", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @PostMapping("/products/{productId}/buy-now")
+    public ResponseEntity<ApiResponse<BidResponse>> buyNow(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+        BidResponse response = bidService.buyNow(productId, userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.ok(response, "Mua ngay thành công"));
+    }
 }

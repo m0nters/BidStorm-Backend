@@ -22,6 +22,7 @@ import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.BlockedBidderRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.service.email.ProductEmailService;
 import com.taitrinh.online_auction.util.NameMaskingUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class BidService {
     private final BidNotificationService notificationService;
     private final EmailService emailService;
     private final ConfigService configService;
+    private final ProductEmailService productEmailService;
 
     /**
      * Place an automatic bid on a product
@@ -82,6 +84,14 @@ public class BidService {
                 throw new UnauthorizedBidException(
                         "Cần đạt điểm đánh giá ít nhất 80% để đấu giá");
             }
+        }
+
+        // Auto-trigger buy now if bid amount >= buy now price
+        if (product.getBuyNowPrice() != null &&
+                request.getMaxBidAmount().compareTo(product.getBuyNowPrice()) >= 0) {
+            log.info("Bid amount {} >= buy now price {}, auto-triggering buy now",
+                    request.getMaxBidAmount(), product.getBuyNowPrice());
+            return buyNow(productId, userId);
         }
 
         // Validate bid amount meets minimum
@@ -351,6 +361,123 @@ public class BidService {
                     newPrice,
                     product.getSlug() // Product slug for link
             );
+        }
+    }
+
+    /**
+     * Buy now - immediately purchase product at buy now price
+     * Ends the auction and sets buyer as winner
+     */
+    @Transactional
+    public BidResponse buyNow(Long productId, Long userId) {
+        log.info("User {} attempting to buy now product {}", userId, productId);
+
+        // Validate product exists and not ended
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+
+        if (product.isEnded()) {
+            throw new ProductEndedException("Sản phẩm đã kết thúc");
+        }
+
+        // Validate buy now price exists
+        if (product.getBuyNowPrice() == null) {
+            throw new InvalidBidAmountException("Sản phẩm không có giá mua ngay");
+        }
+
+        // Validate user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+
+        // Validate user is not the seller
+        if (product.getSeller() != null && userId.equals(product.getSeller().getId())) {
+            throw new UnauthorizedBidException("Người bán không thể mua chính sản phẩm của mình");
+        }
+
+        // Check if user is blocked from bidding on this product
+        if (blockedBidderRepository.existsByProduct_IdAndBidder_Id(productId, userId)) {
+            throw new UnauthorizedBidException("Bạn đã bị người bán chặn khỏi sản phẩm này");
+        }
+
+        // Create bid history record with buy now price
+        BidHistory bidHistory = BidHistory.builder()
+                .product(product)
+                .bidder(user)
+                .bidAmount(product.getBuyNowPrice())
+                .maxBidAmount(product.getBuyNowPrice())
+                .build();
+
+        bidHistory = bidHistoryRepository.save(bidHistory);
+
+        // Update product - set winner, highest bidder, mark as ended
+        User previousHighestBidder = product.getHighestBidder();
+
+        product.setCurrentPrice(product.getBuyNowPrice());
+        product.setHighestBidder(user);
+        product.setWinner(user);
+        product.setIsEnded(true);
+        product.setBidCount(product.getBidCount() + 1);
+        productRepository.save(product);
+
+        log.info("Product {} bought now by user {} at price {}", productId, userId, product.getBuyNowPrice());
+
+        // Create response for buyer (personalized)
+        BidResponse response = bidMapper.toResponseWithViewer(bidHistory, userId, false);
+        response.setIsHighestBidder(true);
+
+        // PUBLIC CHANNEL - masked BidResponse + masked name
+        BidResponse publicResponse = bidMapper.toResponseWithViewer(bidHistory, null, false);
+        publicResponse.setIsHighestBidder(true);
+        String maskedWinnerName = NameMaskingUtil.maskName(user.getFullName());
+
+        // SELLER CHANNEL - unmasked BidResponse + unmasked name
+        BidResponse sellerResponse = bidMapper.toResponseWithViewer(bidHistory, null, true);
+        sellerResponse.setIsHighestBidder(true);
+        String unmaskedWinnerName = user.getFullName();
+
+        // Broadcast to both channels
+        notificationService.notifyProductBoughtNowToPublic(productId, publicResponse, product.getBuyNowPrice(),
+                maskedWinnerName);
+        notificationService.notifyProductBoughtNowToSeller(productId, sellerResponse, product.getBuyNowPrice(),
+                unmaskedWinnerName);
+
+        // Send email notifications
+        sendBuyNowNotificationEmails(product, user, previousHighestBidder);
+
+        return response;
+    }
+
+    /**
+     * Send email notifications for buy now event
+     */
+    private void sendBuyNowNotificationEmails(Product product, User winner, User previousHighestBidder) {
+        // Email to seller
+        if (product.getSeller() != null) {
+            productEmailService.sendWinnerNotificationToSeller(
+                    product.getSeller().getEmail(),
+                    product.getSeller().getFullName(),
+                    product.getTitle(),
+                    winner.getFullName(),
+                    product.getBuyNowPrice(),
+                    product.getSlug());
+        }
+
+        // Email to winner
+        productEmailService.sendWinnerNotificationToBidder(
+                winner.getEmail(),
+                winner.getFullName(),
+                product.getTitle(),
+                product.getBuyNowPrice(),
+                product.getSlug());
+
+        // Email to previous highest bidder if exists
+        if (previousHighestBidder != null && !previousHighestBidder.getId().equals(winner.getId())) {
+            emailService.sendOutbidNotification(
+                    previousHighestBidder.getEmail(),
+                    previousHighestBidder.getFullName(),
+                    product.getTitle(),
+                    product.getBuyNowPrice(),
+                    product.getSlug());
         }
     }
 }

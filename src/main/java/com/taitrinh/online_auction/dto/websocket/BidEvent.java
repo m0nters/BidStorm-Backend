@@ -18,7 +18,8 @@ public class BidEvent {
 
     public enum EventType {
         NEW_BID,
-        BID_REJECTED
+        BID_REJECTED,
+        PRODUCT_BOUGHT_NOW
     }
 
     private EventType type;
@@ -27,6 +28,7 @@ public class BidEvent {
     private BigDecimal currentPrice;
     private String highestBidder;
     private ZonedDateTime endTime;
+    private Boolean isEnded;
 
     // Factory methods for easy event creation
     public static BidEvent newBid(Long productId, BidResponse bid, BigDecimal currentPrice, String highestBidder,
@@ -38,6 +40,7 @@ public class BidEvent {
                 .currentPrice(currentPrice)
                 .highestBidder(highestBidder)
                 .endTime(endTime)
+                .isEnded(false)
                 .build();
     }
 
@@ -46,6 +49,17 @@ public class BidEvent {
                 .type(EventType.BID_REJECTED)
                 .productId(productId)
                 .bid(BidResponse.builder().bidderId(bidderId).build())
+                .build();
+    }
+
+    public static BidEvent productBoughtNow(Long productId, BidResponse bid, BigDecimal finalPrice, String winnerName) {
+        return BidEvent.builder()
+                .type(EventType.PRODUCT_BOUGHT_NOW)
+                .productId(productId)
+                .bid(bid)
+                .currentPrice(finalPrice)
+                .highestBidder(winnerName)
+                .isEnded(true)
                 .build();
     }
 }

@@ -66,6 +66,7 @@ public class SecurityConfig {
                         // Bid endpoints - authenticated users can bid (must be before /products/**
                         // seller rules)
                         .requestMatchers(HttpMethod.POST, "/api/v1/products/*/bids").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products/*/buy-now").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/products/*/bidders/*").authenticated()
 
                         // Profile endpoints - require authentication
