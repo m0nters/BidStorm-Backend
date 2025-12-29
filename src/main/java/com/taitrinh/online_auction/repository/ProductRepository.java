@@ -18,7 +18,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // Top 5 products ending soon (not ended, sorted by end_time ascending)
         @Query("SELECT p FROM Product p " +
                         "LEFT JOIN FETCH p.category " +
-                        "WHERE p.endTime > CURRENT_TIMESTAMP ORDER BY p.endTime ASC")
+                        "WHERE p.endTime > CURRENT_TIMESTAMP AND p.isEnded = false ORDER BY p.endTime ASC")
         List<Product> findTop5EndingSoon(Pageable pageable);
 
         // Top 5 products with most bids (sorted by bid_count descending)
