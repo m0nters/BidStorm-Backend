@@ -154,29 +154,22 @@ CREATE TABLE favorites (
 );
 CREATE INDEX idx_favorites_user_created ON favorites(user_id, created_at DESC);
 
--- 7. AUTO-BID
-CREATE TABLE auto_bids (
-    product_id   BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    bidder_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    max_amount   DECIMAL(15,2) NOT NULL CHECK (max_amount > 0),
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    is_active    BOOLEAN NOT NULL DEFAULT true,
-    PRIMARY KEY (product_id, bidder_id)
-);
-CREATE INDEX idx_auto_bids_product_amount ON auto_bids(product_id, max_amount DESC);
-
--- 8. Lịch sử bid hiển thị (để hiện trên giao diện)
+-- 7. Bid History (automatic bidding system)
+-- Stores both visible bid_amount and private max_bid_amount for automatic bidding
 CREATE TABLE bid_history (
-    id            BIGSERIAL PRIMARY KEY,
-    product_id    BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    bidder_id     BIGINT NOT NULL REFERENCES users(id),
-    bid_amount    DECIMAL(15,2) NOT NULL,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              BIGSERIAL PRIMARY KEY,
+    product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    bidder_id       BIGINT NOT NULL REFERENCES users(id),
+    bid_amount      DECIMAL(15,2) NOT NULL,      -- Actual bid amount shown publicly
+    max_bid_amount  DECIMAL(15,2) NOT NULL,      -- User's maximum willing to pay (automatic bidding)
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_bid_history_product_time ON bid_history(product_id, created_at DESC);
 
--- 9. Blocked bidders (seller refuses a bidder)
+CREATE INDEX idx_bid_history_product_time ON bid_history(product_id, created_at DESC);
+CREATE INDEX idx_bid_history_product_bidder ON bid_history(product_id, bidder_id);
+CREATE INDEX idx_bid_history_max_bid ON bid_history(product_id, max_bid_amount DESC, created_at ASC);
+
+-- 8. Blocked bidders (seller refuses a bidder)
 CREATE TABLE blocked_bidders (
     product_id  BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     bidder_id   BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -184,7 +177,7 @@ CREATE TABLE blocked_bidders (
     PRIMARY KEY (product_id, bidder_id)
 );
 
--- 10. Description append logs (seller bổ sung mô tả)
+-- 9. Description append logs (seller bổ sung mô tả)
 -- Thật ra bảng này không cần thiết cho yêu cầu đề bài, cái này là làm phụ thêm phần "Xem lịch sử chỉnh sửa mô tả sản phẩm"
 CREATE TABLE description_logs (
     id          BIGSERIAL PRIMARY KEY,
@@ -193,7 +186,7 @@ CREATE TABLE description_logs (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 11. Comments (Q&A with self-referencing for threaded discussions)
+-- 10. Comments (Q&A with self-referencing for threaded discussions)
 CREATE TABLE comments (
     id              BIGSERIAL PRIMARY KEY,
     product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -206,7 +199,7 @@ CREATE TABLE comments (
 CREATE INDEX idx_comments_product ON comments(product_id, created_at DESC);
 CREATE INDEX idx_comments_thread ON comments(parent_id);  -- for finding replies
 
--- 12. Reviews (after auction ends)
+-- 11. Reviews (after auction ends)
 CREATE TABLE reviews (
     id           BIGSERIAL PRIMARY KEY,
     product_id   BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -218,7 +211,7 @@ CREATE TABLE reviews (
     UNIQUE(product_id, reviewer_id)
 );
 
--- 13. Upgrade request bidder → seller
+-- 12. Upgrade request bidder → seller
 CREATE TABLE upgrade_requests (
     id          BIGSERIAL PRIMARY KEY,
     bidder_id   BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -230,7 +223,7 @@ CREATE TABLE upgrade_requests (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 14. Post-auction order completion flow
+-- 13. Post-auction order completion flow
 CREATE TABLE order_completions (
     product_id        BIGINT PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
     winner_id         BIGINT NOT NULL REFERENCES users(id),
@@ -244,7 +237,7 @@ CREATE TABLE order_completions (
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 15. Chat between seller & winner after auction ends
+-- 14. Chat between seller & winner after auction ends
 CREATE TABLE order_chat_messages (
     id          BIGSERIAL PRIMARY KEY,
     product_id  BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -253,7 +246,7 @@ CREATE TABLE order_chat_messages (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 16. System configuration (for admin-configurable settings)
+-- 15. System configuration (for admin-configurable settings)
 CREATE TABLE system_configs (
     key         VARCHAR(100) PRIMARY KEY,
     value       TEXT NOT NULL,
