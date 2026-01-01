@@ -225,17 +225,45 @@ CREATE TABLE upgrade_requests (
 
 -- 13. Post-auction order completion flow
 CREATE TABLE order_completions (
-    product_id        BIGINT PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
-    winner_id         BIGINT NOT NULL REFERENCES users(id),
-    payment_status    VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'cancelled')),
-    shipping_address  TEXT,
-    tracking_number   VARCHAR(100),
-    cancelled_by      BIGINT REFERENCES users(id),         -- seller who cancelled
-    cancel_reason     TEXT,
-    buyer_confirmed   BOOLEAN DEFAULT false,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                      BIGSERIAL PRIMARY KEY,
+    product_id              BIGINT UNIQUE NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    winner_id               BIGINT NOT NULL REFERENCES users(id),
+    
+    -- Status: PENDING_PAYMENT → PAID → SHIPPED → COMPLETED (or CANCELLED before payment)
+    status                  VARCHAR(30) NOT NULL DEFAULT 'PENDING_PAYMENT' 
+                            CHECK (status IN (
+                                'PENDING_PAYMENT',   -- Waiting for payment
+                                'PAID',              -- Money held in escrow
+                                'SHIPPED',           -- Seller confirmed shipment
+                                'COMPLETED',         -- Buyer confirmed receipt, money transferred
+                                'CANCELLED'          -- Seller cancelled before payment
+                            )),
+    
+    -- Shipping information
+    shipping_address        TEXT,
+    shipping_phone          VARCHAR(20),
+    tracking_number         VARCHAR(100),
+    
+    -- Stripe payment details
+    stripe_payment_intent_id VARCHAR(255) UNIQUE,
+    stripe_transfer_id      VARCHAR(255),
+    amount_cents            BIGINT NOT NULL,        -- Amount in cents (USD)
+    currency                VARCHAR(3) NOT NULL DEFAULT 'USD',
+    
+    -- Timestamps for each stage
+    paid_at                 TIMESTAMPTZ,
+    shipped_at              TIMESTAMPTZ,
+    completed_at            TIMESTAMPTZ,
+    
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Indexes for performance
+CREATE INDEX idx_order_completions_product ON order_completions(product_id);
+CREATE INDEX idx_order_completions_winner ON order_completions(winner_id);
+CREATE INDEX idx_order_completions_status ON order_completions(status);
+CREATE INDEX idx_order_completions_stripe_pi ON order_completions(stripe_payment_intent_id);
 
 -- 14. Chat between seller & winner after auction ends
 CREATE TABLE order_chat_messages (

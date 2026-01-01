@@ -132,10 +132,11 @@ public class ProductController {
                         "seller info, highest bidder info, and description logs. Authentication is optional - sellers see unmasked bidder names on their products.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(
                         @Parameter(description = "Product ID", example = "1") @PathVariable Long id,
+                        @Parameter(description = "Increment view count", example = "false") @RequestParam(defaultValue = "false") boolean incrementViewCount,
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
                 Long viewerId = userDetails != null ? userDetails.getUserId() : null;
-                ProductDetailResponse product = productService.getProductDetailById(id, viewerId);
+                ProductDetailResponse product = productService.getProductDetailById(id, viewerId, incrementViewCount);
                 return ResponseEntity.ok(ApiResponse.ok(product,
                                 "Chi tiết sản phẩm đã được lấy thành công"));
         }
@@ -146,10 +147,12 @@ public class ProductController {
                         "seller info, highest bidder info, and description logs. Authentication is optional - sellers see unmasked bidder names on their products.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetailBySlug(
                         @Parameter(description = "Product slug", example = "iphone-15-pro-max") @PathVariable String slug,
+                        @Parameter(description = "Increment view count", example = "false") @RequestParam(defaultValue = "false") boolean incrementViewCount,
                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
                 Long viewerId = userDetails != null ? userDetails.getUserId() : null;
-                ProductDetailResponse product = productService.getProductDetailBySlug(slug, viewerId);
+                ProductDetailResponse product = productService.getProductDetailBySlug(slug, viewerId,
+                                incrementViewCount);
                 return ResponseEntity.ok(ApiResponse.ok(product,
                                 "Chi tiết sản phẩm đã được lấy thành công"));
         }

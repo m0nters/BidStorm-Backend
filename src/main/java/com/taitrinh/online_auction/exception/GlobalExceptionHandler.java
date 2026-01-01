@@ -132,6 +132,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
+    @ExceptionHandler(ChatAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleChatAccessDenied(ChatAccessDeniedException ex) {
+        ErrorResponse errorResponse = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
     @ExceptionHandler(InvalidCommentStateException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCommentState(InvalidCommentStateException ex) {
         ErrorResponse errorResponse = ErrorResponse.of(

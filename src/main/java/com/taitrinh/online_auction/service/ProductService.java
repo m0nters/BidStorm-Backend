@@ -205,7 +205,7 @@ public class ProductService {
      * (by slug)
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProductDetailById(Long id, Long viewerId) {
+    public ProductDetailResponse getProductDetailById(Long id, Long viewerId, boolean incrementViewCount) {
         log.debug("Getting product detail for id: {}", id);
 
         Product product = productRepository.findByIdWithDetails(id)
@@ -213,7 +213,9 @@ public class ProductService {
 
         // Increment view count (in a separate transaction to avoid locking)
         // Call through Spring proxy to ensure REQUIRES_NEW propagation works
-        applicationContext.getBean(ProductService.class).incrementViewCount(id);
+        if (incrementViewCount) {
+            applicationContext.getBean(ProductService.class).incrementViewCount(id);
+        }
 
         // Update product view count for response
         product.setViewCount(product.getViewCount() + 1);
@@ -230,7 +232,7 @@ public class ProductService {
      * Get product detail by slug
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProductDetailBySlug(String slug, Long viewerId) {
+    public ProductDetailResponse getProductDetailBySlug(String slug, Long viewerId, boolean incrementViewCount) {
         log.debug("Getting product detail for slug: {}", slug);
 
         Product product = productRepository.findBySlug(slug)
@@ -238,7 +240,9 @@ public class ProductService {
 
         // Increment view count (in a separate transaction to avoid locking)
         // Call through Spring proxy to ensure REQUIRES_NEW propagation works
-        applicationContext.getBean(ProductService.class).incrementViewCount(product.getId());
+        if (incrementViewCount) {
+            applicationContext.getBean(ProductService.class).incrementViewCount(product.getId());
+        }
 
         // Update product view count for response
         product.setViewCount(product.getViewCount() + 1);

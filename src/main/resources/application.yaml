@@ -81,6 +81,16 @@ aws:
     bucket-name: ${AWS_S3_BUCKET_NAME}
     region: ${AWS_S3_REGION}
 
+# Stripe Payment Configuration
+stripe:
+  api:
+    key: ${STRIPE_API_KEY}
+  publishable:
+    key: ${STRIPE_PUBLISHABLE_KEY}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET}
+  currency: USD
+
 # Logging Configuration
 logging:
   level:

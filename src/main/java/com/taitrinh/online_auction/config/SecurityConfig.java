@@ -24,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -56,6 +57,9 @@ public class SecurityConfig {
                         // Public authentication endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+
+                        // Stripe webhooks (Stripe calls this, not authenticated users)
+                        .requestMatchers("/api/v1/webhooks/stripe").permitAll()
 
                         // Public product browsing endpoints (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
@@ -122,8 +126,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.web.client.RestTemplate restTemplate() {
-        return new org.springframework.web.client.RestTemplate();
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
     /**
