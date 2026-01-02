@@ -1,5 +1,6 @@
 package com.taitrinh.online_auction.repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -112,6 +113,23 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // queries)
         @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND p.isEnded = false")
         Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds, Pageable pageable);
+
+        // Find products that ended between two timestamps (for cron job processing)
+        @Query("SELECT p FROM Product p WHERE p.endTime > :startTime AND p.endTime <= :endTime AND p.isEnded = false")
+        List<Product> findProductsEndingBetween(@Param("startTime") ZonedDateTime startTime,
+                        @Param("endTime") ZonedDateTime endTime);
+
+        // Find seller's active products (not ended)
+        Page<Product> findBySeller_IdAndIsEndedFalseOrderByCreatedAtDesc(Long sellerId, Pageable pageable);
+
+        // Find seller's ended products with winners
+        @Query("SELECT p FROM Product p " +
+                        "LEFT JOIN FETCH p.winner " +
+                        "LEFT JOIN FETCH p.images " +
+                        "WHERE p.seller.id = :sellerId AND p.isEnded = true AND p.winner IS NOT NULL " +
+                        "ORDER BY p.endTime DESC")
+        Page<Product> findBySeller_IdAndIsEndedTrueAndWinnerIsNotNull(@Param("sellerId") Long sellerId,
+                        Pageable pageable);
 
         // Find products that ended between two timestamps (for cron job processing)
         @Query("SELECT p FROM Product p " +

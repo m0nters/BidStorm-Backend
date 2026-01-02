@@ -23,6 +23,8 @@ import com.taitrinh.online_auction.dto.profile.CreateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.FavoriteProductResponse;
 import com.taitrinh.online_auction.dto.profile.ReviewResponse;
 import com.taitrinh.online_auction.dto.profile.RevieweeProfileResponse;
+import com.taitrinh.online_auction.dto.profile.SellerActiveProductResponse;
+import com.taitrinh.online_auction.dto.profile.SellerEndedProductResponse;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
@@ -283,5 +285,39 @@ public class ProfileController {
                                 PageRequest.of(page, size));
                 return ResponseEntity
                                 .ok(ApiResponse.ok(wonProducts, "Danh sách sản phẩm đã thắng đã được lấy thành công"));
+        }
+
+        @GetMapping("/seller/products/active")
+        @Operation(summary = "Get seller's active products", description = "Get all active (not ended) products for the current seller")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Products retrieved successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Not a seller")
+        })
+        public ResponseEntity<ApiResponse<Page<SellerActiveProductResponse>>> getActiveSellerProducts(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+                Page<SellerActiveProductResponse> products = profileService.getActiveSellerProducts(
+                                userDetails.getUserId(),
+                                PageRequest.of(page, size));
+                return ResponseEntity.ok(ApiResponse.ok(products, "Danh sách sản phẩm đang bán"));
+        }
+
+        @GetMapping("/seller/products/ended")
+        @Operation(summary = "Get seller's ended products with winners", description = "Get all ended products with winners for the current seller. These products can be reviewed.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Products retrieved successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Not a seller")
+        })
+        public ResponseEntity<ApiResponse<Page<SellerEndedProductResponse>>> getEndedProductsWithWinners(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+                Page<SellerEndedProductResponse> products = profileService.getEndedProductsWithWinners(
+                                userDetails.getUserId(),
+                                PageRequest.of(page, size));
+                return ResponseEntity.ok(ApiResponse.ok(products, "Danh sách sản phẩm đã kết thúc có người thắng"));
         }
 }

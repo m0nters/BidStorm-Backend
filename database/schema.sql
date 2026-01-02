@@ -247,8 +247,8 @@ CREATE TABLE order_completions (
     -- Stripe payment details
     stripe_payment_intent_id VARCHAR(255) UNIQUE,
     stripe_transfer_id      VARCHAR(255),
-    amount_cents            BIGINT NOT NULL,        -- Amount in cents (USD)
-    currency                VARCHAR(3) NOT NULL DEFAULT 'USD',
+    amount_cents            BIGINT NOT NULL,        -- Amount in smallest currency unit (e.g., cents for USD)
+    currency                VARCHAR(3) NOT NULL DEFAULT 'VND',
     
     -- Timestamps for each stage
     paid_at                 TIMESTAMPTZ,

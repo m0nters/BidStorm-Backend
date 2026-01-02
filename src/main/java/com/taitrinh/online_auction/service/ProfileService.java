@@ -1,5 +1,7 @@
 package com.taitrinh.online_auction.service;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,12 +14,15 @@ import com.taitrinh.online_auction.dto.profile.CreateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.FavoriteProductResponse;
 import com.taitrinh.online_auction.dto.profile.ReviewResponse;
 import com.taitrinh.online_auction.dto.profile.RevieweeProfileResponse;
+import com.taitrinh.online_auction.dto.profile.SellerActiveProductResponse;
+import com.taitrinh.online_auction.dto.profile.SellerEndedProductResponse;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
 import com.taitrinh.online_auction.entity.BidHistory;
 import com.taitrinh.online_auction.entity.Favorite;
+import com.taitrinh.online_auction.entity.OrderCompletion;
 import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.ProductImage;
 import com.taitrinh.online_auction.entity.Review;
@@ -27,6 +32,7 @@ import com.taitrinh.online_auction.exception.EmailAlreadyExistsException;
 import com.taitrinh.online_auction.exception.ResourceNotFoundException;
 import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.FavoriteRepository;
+import com.taitrinh.online_auction.repository.OrderCompletionRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.ReviewRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
@@ -44,6 +50,7 @@ public class ProfileService {
     private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
     private final BidHistoryRepository bidHistoryRepository;
+    private final OrderCompletionRepository orderCompletionRepository;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -639,6 +646,87 @@ public class ProfileService {
                     .sellerName(product.getSeller().getFullName())
                     .endTime(product.getEndTime())
                     .hasReviewed(hasReviewed)
+                    .build();
+        });
+    }
+
+    /**
+     * Get seller's active products (not ended)
+     */
+    @Transactional(readOnly = true)
+    public Page<SellerActiveProductResponse> getActiveSellerProducts(Long sellerId, Pageable pageable) {
+        Page<Product> products = productRepository.findBySeller_IdAndIsEndedFalseOrderByCreatedAtDesc(sellerId,
+                pageable);
+
+        return products.map(product -> {
+            String thumbnailUrl = product.getImages().stream()
+                    .filter(image -> image.getIsPrimary())
+                    .findFirst()
+                    .map(ProductImage::getUrl)
+                    .orElse(null);
+
+            return SellerActiveProductResponse.builder()
+                    .id(product.getId())
+                    .title(product.getTitle())
+                    .slug(product.getSlug())
+                    .thumbnailUrl(thumbnailUrl)
+                    .startingPrice(product.getStartingPrice())
+                    .currentPrice(product.getCurrentPrice())
+                    .buyNowPrice(product.getBuyNowPrice())
+                    .bidCount(product.getBidCount())
+                    .endTime(product.getEndTime())
+                    .createdAt(product.getCreatedAt())
+                    .categoryName(product.getCategory().getName())
+                    .categorySlug(product.getCategory().getSlug())
+                    .build();
+        });
+    }
+
+    /**
+     * Get seller's ended products with winners
+     * Returns detailed information including winner details and review status
+     */
+    @Transactional(readOnly = true)
+    public Page<SellerEndedProductResponse> getEndedProductsWithWinners(Long sellerId, Pageable pageable) {
+        Page<Product> products = productRepository.findBySeller_IdAndIsEndedTrueAndWinnerIsNotNull(sellerId,
+                pageable);
+
+        return products.map(product -> {
+            String thumbnailUrl = product.getImages().stream()
+                    .filter(image -> image.getIsPrimary())
+                    .findFirst()
+                    .map(ProductImage::getUrl)
+                    .orElse(null);
+
+            // Check if seller has reviewed this winner
+            boolean hasReviewed = reviewRepository.existsByProduct_IdAndReviewer_Id(
+                    product.getId(),
+                    sellerId);
+
+            // Get order status and ID if order exists
+            Optional<OrderCompletion> orderCompletion = orderCompletionRepository.findByProduct_Id(product.getId());
+            String orderStatus = orderCompletion
+                    .map(order -> order.getStatus().name())
+                    .orElse(null);
+            Long orderId = orderCompletion
+                    .map(order -> order.getId())
+                    .orElse(null);
+
+            return SellerEndedProductResponse.builder()
+                    .productId(product.getId())
+                    .title(product.getTitle())
+                    .slug(product.getSlug())
+                    .thumbnailUrl(thumbnailUrl)
+                    .startingPrice(product.getStartingPrice())
+                    .finalPrice(product.getCurrentPrice())
+                    .endTime(product.getEndTime())
+                    .winnerId(product.getWinner().getId())
+                    .winnerName(product.getWinner().getFullName())
+                    .winnerPositiveRating(product.getWinner().getPositiveRating())
+                    .winnerNegativeRating(product.getWinner().getNegativeRating())
+                    .hasReviewed(hasReviewed)
+                    .orderStatus(orderStatus)
+                    .orderId(orderId)
                     .build();
         });
     }
