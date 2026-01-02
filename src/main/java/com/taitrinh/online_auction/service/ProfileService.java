@@ -11,12 +11,15 @@ import com.taitrinh.online_auction.dto.profile.ChangePasswordRequest;
 import com.taitrinh.online_auction.dto.profile.CreateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.FavoriteProductResponse;
 import com.taitrinh.online_auction.dto.profile.ReviewResponse;
+import com.taitrinh.online_auction.dto.profile.RevieweeProfileResponse;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
+import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
 import com.taitrinh.online_auction.entity.BidHistory;
 import com.taitrinh.online_auction.entity.Favorite;
 import com.taitrinh.online_auction.entity.Product;
+import com.taitrinh.online_auction.entity.ProductImage;
 import com.taitrinh.online_auction.entity.Review;
 import com.taitrinh.online_auction.entity.User;
 import com.taitrinh.online_auction.exception.BadRequestException;
@@ -151,16 +154,57 @@ public class ProfileService {
     public Page<ReviewResponse> getUserReviews(Long userId, Pageable pageable) {
         Page<Review> reviews = reviewRepository.findByReviewee_IdOrderByCreatedAtDesc(userId, pageable);
 
-        return reviews.map(review -> ReviewResponse.builder()
-                .id(review.getId())
-                .productId(review.getProduct().getId())
-                .productTitle(review.getProduct().getTitle())
-                .reviewerId(review.getReviewer().getId())
-                .reviewerName(review.getReviewer().getFullName())
-                .rating(review.getRating())
-                .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .build());
+        return reviews.map(review -> {
+            String thumbnailUrl = review.getProduct().getImages().stream()
+                    .filter(image -> image.getIsPrimary())
+                    .findFirst()
+                    .map(ProductImage::getUrl)
+                    .orElse(null);
+
+            return ReviewResponse.builder()
+                    .id(review.getId())
+                    .productId(review.getProduct().getId())
+                    .productTitle(review.getProduct().getTitle())
+                    .productUrl(review.getProduct().getSlug())
+                    .thumbnailUrl(thumbnailUrl)
+                    .isYourProduct(review.getProduct().getSeller().getId() == userId)
+                    .reviewerId(review.getReviewer().getId())
+                    .reviewerName(review.getReviewer().getFullName())
+                    .rating(review.getRating())
+                    .comment(review.getComment())
+                    .createdAt(review.getCreatedAt())
+                    .build();
+        });
+    }
+
+    /**
+     * Get reviews given by a user (where user is the reviewer) with pagination
+     */
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> getReviewsGivenByUser(Long userId, Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findByReviewer_IdOrderByCreatedAtDesc(userId, pageable);
+
+        return reviews.map(review -> {
+            String thumbnailUrl = review.getProduct().getImages().stream()
+                    .filter(image -> image.getIsPrimary())
+                    .findFirst()
+                    .map(ProductImage::getUrl)
+                    .orElse(null);
+
+            return ReviewResponse.builder()
+                    .id(review.getId())
+                    .productId(review.getProduct().getId())
+                    .productTitle(review.getProduct().getTitle())
+                    .productUrl(review.getProduct().getSlug())
+                    .thumbnailUrl(thumbnailUrl)
+                    .isYourProduct(review.getProduct().getSeller().getId() == userId)
+                    .reviewerId(review.getReviewee().getId()) // Person we reviewed (reviewee)
+                    .reviewerName(review.getReviewee().getFullName())
+                    .rating(review.getRating())
+                    .comment(review.getComment())
+                    .createdAt(review.getCreatedAt())
+                    .build();
+        });
     }
 
     /**
@@ -226,6 +270,232 @@ public class ProfileService {
         userRepository.save(reviewee);
 
         log.info("Review created by user {} for product {}", reviewerId, request.getProductId());
+    }
+
+    /**
+     * Update an existing review
+     * Users can only update their own reviews
+     */
+    @Transactional
+    public void updateReview(Long reviewerId, Long productId, UpdateReviewRequest request) {
+        // Validate rating value
+        if (request.getRating() != 1 && request.getRating() != -1) {
+            throw new BadRequestException("Đánh giá phải là 1 hoặc -1");
+        }
+
+        // Get the review
+        Review review = reviewRepository.findByProduct_IdAndReviewer_Id(productId, reviewerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá của bạn cho sản phẩm này"));
+
+        // Verify ownership
+        if (!review.getReviewer().getId().equals(reviewerId)) {
+            throw new BadRequestException("Bạn chỉ có thể cập nhật đánh giá của chính mình");
+        }
+
+        User reviewee = review.getReviewee();
+        short oldRating = review.getRating();
+
+        // Update review fields
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+        reviewRepository.save(review);
+
+        // Adjust rating counts if rating changed
+        if (oldRating != request.getRating()) {
+            if (oldRating == 1) {
+                reviewee.setPositiveRating(reviewee.getPositiveRating() - 1);
+            } else {
+                reviewee.setNegativeRating(reviewee.getNegativeRating() - 1);
+            }
+
+            if (request.getRating() == 1) {
+                reviewee.setPositiveRating(reviewee.getPositiveRating() + 1);
+            } else {
+                reviewee.setNegativeRating(reviewee.getNegativeRating() + 1);
+            }
+
+            userRepository.save(reviewee);
+        }
+
+        log.info("Review updated by user {} for product {}", reviewerId, productId);
+    }
+
+    /**
+     * Delete a review
+     * Users can only delete their own reviews
+     */
+    @Transactional
+    public void deleteReview(Long reviewerId, Long productId) {
+        // Get the review
+        Review review = reviewRepository.findByProduct_IdAndReviewer_Id(productId, reviewerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá của bạn cho sản phẩm này"));
+
+        // Verify ownership
+        if (!review.getReviewer().getId().equals(reviewerId)) {
+            throw new BadRequestException("Bạn chỉ có thể xóa đánh giá của chính mình");
+        }
+
+        User reviewee = review.getReviewee();
+
+        // Decrease rating count
+        if (review.getRating() == 1) {
+            reviewee.setPositiveRating(reviewee.getPositiveRating() - 1);
+        } else {
+            reviewee.setNegativeRating(reviewee.getNegativeRating() - 1);
+        }
+        userRepository.save(reviewee);
+
+        // Delete review
+        reviewRepository.delete(review);
+
+        log.info("Review deleted by user {} for product {}", reviewerId, productId);
+    }
+
+    /**
+     * Internal method to create or update a review programmatically
+     * Used by OrderCompletionService when seller cancels order
+     * Bypasses authorization checks as this is called internally
+     */
+    @Transactional
+    public void createOrUpdateReviewInternal(Long productId, Long reviewerId, short rating, String comment) {
+        // Get the product
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
+
+        User reviewer = userRepository.findById(reviewerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", reviewerId));
+
+        // Determine reviewee (for seller canceling, it's the winner)
+        User reviewee = product.getWinner();
+        if (reviewee == null) {
+            throw new BadRequestException("Sản phẩm này không có người thắng");
+        }
+
+        // Check if review already exists
+        Review existingReview = reviewRepository.findByProduct_IdAndReviewer_Id(productId, reviewerId)
+                .orElse(null);
+
+        if (existingReview == null) {
+            // Create new review
+            Review review = Review.builder()
+                    .product(product)
+                    .reviewer(reviewer)
+                    .reviewee(reviewee)
+                    .rating(rating)
+                    .comment(comment)
+                    .build();
+
+            reviewRepository.save(review);
+
+            // Update reviewee's rating count
+            if (rating == 1) {
+                reviewee.setPositiveRating(reviewee.getPositiveRating() + 1);
+            } else {
+                reviewee.setNegativeRating(reviewee.getNegativeRating() + 1);
+            }
+            userRepository.save(reviewee);
+
+            log.info("Review created internally for product {} by user {}", productId, reviewerId);
+        } else {
+            // Update existing review
+            short oldRating = existingReview.getRating();
+
+            existingReview.setRating(rating);
+            existingReview.setComment(comment);
+            reviewRepository.save(existingReview);
+
+            // Adjust rating counts if needed
+            if (oldRating != rating) {
+                if (oldRating == 1) {
+                    reviewee.setPositiveRating(reviewee.getPositiveRating() - 1);
+                } else {
+                    reviewee.setNegativeRating(reviewee.getNegativeRating() - 1);
+                }
+
+                if (rating == 1) {
+                    reviewee.setPositiveRating(reviewee.getPositiveRating() + 1);
+                } else {
+                    reviewee.setNegativeRating(reviewee.getNegativeRating() + 1);
+                }
+
+                userRepository.save(reviewee);
+            }
+
+            log.info("Review updated internally for product {} by user {}", productId, reviewerId);
+        }
+    }
+
+    /**
+     * Get basic profile information of reviewee (person to be reviewed)
+     * Only seller and winner can access this for a specific product
+     */
+    @Transactional(readOnly = true)
+    public RevieweeProfileResponse getRevieweeProfile(Long productId, Long requesterId) {
+        // Get the product
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm", productId));
+
+        // Check if product has ended
+        if (!product.getIsEnded()) {
+            throw new BadRequestException("Không thể xem thông tin người đánh giá khi sản phẩm chưa kết thúc");
+        }
+
+        // Check if product has winner
+        if (product.getWinner() == null) {
+            throw new BadRequestException("Sản phẩm này không có người thắng");
+        }
+
+        // Determine who is the reviewee based on requester
+        User reviewee;
+        boolean isSeller = product.getSeller().getId().equals(requesterId);
+        boolean isWinner = product.getWinner().getId().equals(requesterId);
+
+        if (isSeller) {
+            // Seller wants to see winner's profile
+            reviewee = product.getWinner();
+        } else if (isWinner) {
+            // Winner wants to see seller's profile
+            reviewee = product.getSeller();
+        } else {
+            throw new BadRequestException("Chỉ người bán hoặc người thắng cuộc mới có thể xem thông tin này");
+        }
+
+        // Build and return response with basic profile info
+        return RevieweeProfileResponse.builder()
+                .id(reviewee.getId())
+                .fullName(reviewee.getFullName())
+                .positiveRating(reviewee.getPositiveRating())
+                .negativeRating(reviewee.getNegativeRating())
+                .ratingPercentage(reviewee.getRatingPercentage())
+                .totalRatings(reviewee.getPositiveRating() + reviewee.getNegativeRating())
+                .build();
+    }
+
+    /**
+     * Get user's review for a specific product
+     * Returns the review if it exists, null otherwise
+     */
+    @Transactional(readOnly = true)
+    public ReviewResponse getUserReviewForProduct(Long productId, Long userId) {
+        return reviewRepository.findByProduct_IdAndReviewer_Id(productId, userId)
+                .map(review -> {
+                    String thumbnailUrl = review.getProduct().getImages().isEmpty() ? null
+                            : review.getProduct().getImages().get(0).getUrl();
+
+                    return ReviewResponse.builder()
+                            .id(review.getId())
+                            .productId(review.getProduct().getId())
+                            .productTitle(review.getProduct().getTitle())
+                            .productUrl(review.getProduct().getSlug())
+                            .thumbnailUrl(thumbnailUrl)
+                            .reviewerId(review.getReviewee().getId())
+                            .reviewerName(review.getReviewee().getFullName())
+                            .rating(review.getRating())
+                            .comment(review.getComment())
+                            .createdAt(review.getCreatedAt())
+                            .build();
+                })
+                .orElse(null);
     }
 
     /**

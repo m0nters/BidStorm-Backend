@@ -34,6 +34,7 @@ public class OrderCompletionService {
 
     private final OrderCompletionRepository orderCompletionRepository;
     private final ProductRepository productRepository;
+    private final ProfileService profileService;
     private final StripePaymentService stripePaymentService;
     private final SimpMessagingTemplate messagingTemplate;
     private final OrderCompletionMapper orderCompletionMapper;
@@ -71,7 +72,7 @@ public class OrderCompletionService {
         if (existingOrder.isPresent()) {
             log.info("Order already exists for product {}, returning existing order {}",
                     productId, existingOrder.get().getId());
-            return mapToResponse(existingOrder.get());
+            return orderCompletionMapper.toOrderStatusResponse(existingOrder.get());
         }
 
         // Use product price directly in VND (Stripe's smallest unit for VND is đồng)
@@ -229,6 +230,8 @@ public class OrderCompletionService {
 
     /**
      * Seller cancels order (only before payment)
+     * Automatically creates a -1 review for the buyer with comment "Người thắng
+     * không thanh toán"
      */
     @Transactional
     public OrderStatusResponse cancelOrder(Long orderId, Long sellerId) {
@@ -247,6 +250,14 @@ public class OrderCompletionService {
 
         order.setStatus(OrderStatus.CANCELLED);
         orderCompletionRepository.save(order);
+
+        // Automatically create or update -1 review for buyer (winner)
+        // Delegates to ProfileService to reuse review logic
+        profileService.createOrUpdateReviewInternal(
+                order.getProduct().getId(),
+                sellerId,
+                (short) -1,
+                "Người thắng không thanh toán");
 
         log.info("Order {} cancelled by seller {}", orderId, sellerId);
 

@@ -2,6 +2,9 @@ package com.taitrinh.online_auction.dto.profile;
 
 import java.time.ZonedDateTime;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Review details with reviewer and product information")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ReviewResponse {
 
     @Schema(description = "Review ID", example = "1")
@@ -23,6 +27,16 @@ public class ReviewResponse {
 
     @Schema(description = "Product title", example = "iPhone 13 Pro Max")
     private String productTitle;
+
+    @Schema(description = "Product URL", example = "https://example.com/product")
+    private String productUrl;
+
+    @Schema(description = "Product thumbnail URL (first image)", example = "https://example.com/image.jpg")
+    private String thumbnailUrl;
+
+    @JsonProperty("isYourProduct")
+    @Schema(description = "Is this your product?")
+    private boolean isYourProduct;
 
     @Schema(description = "Reviewer ID", example = "2")
     private Long reviewerId;

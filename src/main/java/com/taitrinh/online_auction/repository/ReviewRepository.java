@@ -22,6 +22,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                         "ORDER BY r.createdAt DESC")
         Page<Review> findByReviewee_IdOrderByCreatedAtDesc(@Param("revieweeId") Long revieweeId, Pageable pageable);
 
+        // Find all reviews made by a user (as reviewer) with pagination
+        @Query("SELECT r FROM Review r " +
+                        "LEFT JOIN FETCH r.reviewee " +
+                        "LEFT JOIN FETCH r.product " +
+                        "WHERE r.reviewer.id = :reviewerId " +
+                        "ORDER BY r.createdAt DESC")
+        Page<Review> findByReviewer_IdOrderByCreatedAtDesc(@Param("reviewerId") Long reviewerId, Pageable pageable);
+
         // Check if review exists for a product by a reviewer
         boolean existsByProduct_IdAndReviewer_Id(Long productId, Long reviewerId);
 

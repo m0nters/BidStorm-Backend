@@ -22,7 +22,9 @@ import com.taitrinh.online_auction.dto.profile.ChangePasswordRequest;
 import com.taitrinh.online_auction.dto.profile.CreateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.FavoriteProductResponse;
 import com.taitrinh.online_auction.dto.profile.ReviewResponse;
+import com.taitrinh.online_auction.dto.profile.RevieweeProfileResponse;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
+import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
@@ -102,6 +104,21 @@ public class ProfileController {
                 return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã được lấy thành công"));
         }
 
+        @GetMapping("/reviews/given")
+        @Operation(summary = "Get reviews given by user", description = "Get all reviews made by the current user (where user is the reviewer)")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reviews retrieved successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getReviewsGivenByUser(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+                Page<ReviewResponse> reviews = profileService.getReviewsGivenByUser(userDetails.getUserId(),
+                                PageRequest.of(page, size));
+                return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã gửi đã được lấy thành công"));
+        }
+
         @PostMapping("/reviews")
         @Operation(summary = "Create review", description = "Create a review for a seller or buyer after auction ends. Only winners can review sellers and sellers can review winners.")
         @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
@@ -114,6 +131,64 @@ public class ProfileController {
                         @Valid @RequestBody CreateReviewRequest request) {
                 profileService.createReview(userDetails.getUserId(), request);
                 return ResponseEntity.ok(ApiResponse.ok(null, "Đánh giá đã được tạo thành công"));
+        }
+
+        @PutMapping("/reviews/{productId}")
+        @Operation(summary = "Update review", description = "Update an existing review for a product. Users can only update their own reviews.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Review updated successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request or review not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Void>> updateReview(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long productId,
+                        @Valid @RequestBody UpdateReviewRequest request) {
+                profileService.updateReview(userDetails.getUserId(), productId, request);
+                return ResponseEntity.ok(ApiResponse.ok(null, "Đánh giá đã được cập nhật thành công"));
+        }
+
+        @DeleteMapping("/reviews/{productId}")
+        @Operation(summary = "Delete review", description = "Delete an existing review for a product. Users can only delete their own reviews.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Review deleted successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Review not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Void>> deleteReview(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long productId) {
+                profileService.deleteReview(userDetails.getUserId(), productId);
+                return ResponseEntity.ok(ApiResponse.ok(null, "Đánh giá đã được xóa thành công"));
+        }
+
+        @GetMapping("/reviewee/{productId}")
+        @Operation(summary = "Get reviewee profile", description = "Get basic profile information of the person to review (seller or winner). Only seller and winner can access this for a specific product.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Product not ended or no winner, or unauthorized access"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<RevieweeProfileResponse>> getRevieweeProfile(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long productId) {
+                RevieweeProfileResponse profile = profileService.getRevieweeProfile(productId, userDetails.getUserId());
+                return ResponseEntity.ok(ApiResponse.ok(profile, "Lấy thông tin người đánh giá thành công"));
+        }
+
+        @GetMapping("/reviews/product/{productId}")
+        @Operation(summary = "Get user's review for product", description = "Get the current user's review for a specific product. Returns null if no review exists.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Review retrieved successfully (or null if not found)"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<ReviewResponse>> getUserReviewForProduct(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Product ID", example = "1") @PathVariable Long productId) {
+                ReviewResponse review = profileService.getUserReviewForProduct(productId, userDetails.getUserId());
+                return ResponseEntity.ok(ApiResponse.ok(review,
+                                review != null ? "Đánh giá đã được tìm thấy" : "Bạn chưa đánh giá sản phẩm này"));
         }
 
         @GetMapping("/favorites")
