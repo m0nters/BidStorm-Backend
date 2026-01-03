@@ -122,6 +122,9 @@ public class ProductDetailResponse {
         @Schema(description = "User full name", example = "John Doe")
         private String fullName;
 
+        @Schema(description = "User avatar URL", example = "https://example.com/avatars/10.jpg")
+        private String avatarUrl;
+
         @Schema(description = "Positive rating count", example = "50")
         private Integer positiveRating;
 

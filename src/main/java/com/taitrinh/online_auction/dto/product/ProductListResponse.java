@@ -58,6 +58,9 @@ public class ProductListResponse {
     @Schema(description = "Seller name", example = "John Doe")
     private String sellerName;
 
+    @Schema(description = "Seller avatar URL", example = "https://example.com/avatars/1.jpg")
+    private String sellerAvatarUrl;
+
     @Schema(description = "Seller rating percentage", example = "85.5")
     private Double sellerRating;
 

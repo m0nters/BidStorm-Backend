@@ -19,6 +19,9 @@ public class RevieweeProfileResponse {
     @Schema(description = "User full name", example = "Nguyễn Văn A")
     private String fullName;
 
+    @Schema(description = "User avatar URL", example = "https://example.com/avatars/1.jpg")
+    private String avatarUrl;
+
     @Schema(description = "Positive rating count", example = "10")
     private Integer positiveRating;
 

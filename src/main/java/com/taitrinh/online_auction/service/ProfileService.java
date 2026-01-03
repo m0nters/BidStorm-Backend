@@ -474,6 +474,7 @@ public class ProfileService {
         return RevieweeProfileResponse.builder()
                 .id(reviewee.getId())
                 .fullName(reviewee.getFullName())
+                .avatarUrl(reviewee.getAvatarUrl())
                 .positiveRating(reviewee.getPositiveRating())
                 .negativeRating(reviewee.getNegativeRating())
                 .ratingPercentage(reviewee.getRatingPercentage())
@@ -647,6 +648,7 @@ public class ProfileService {
                     .winningBid(product.getCurrentPrice())
                     .sellerId(product.getSeller().getId())
                     .sellerName(product.getSeller().getFullName())
+                    .sellerAvatarUrl(product.getSeller().getAvatarUrl())
                     .endTime(product.getEndTime())
                     .hasReviewed(hasReviewed)
                     .build();

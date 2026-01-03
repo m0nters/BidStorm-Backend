@@ -37,6 +37,9 @@ public class WonProductResponse {
     @Schema(description = "Seller name", example = "Jane Smith")
     private String sellerName;
 
+    @Schema(description = "Seller avatar URL", example = "https://example.com/avatars/5.jpg")
+    private String sellerAvatarUrl;
+
     @Schema(description = "Auction end time")
     private ZonedDateTime endTime;
 
