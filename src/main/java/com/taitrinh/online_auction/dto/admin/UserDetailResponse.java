@@ -25,6 +25,9 @@ public class UserDetailResponse {
     @Schema(description = "User full name", example = "Nguyễn Văn A")
     private String fullName;
 
+    @Schema(description = "User avatar URL", example = "https://example.com/avatar.jpg")
+    private String avatarUrl;
+
     @Schema(description = "User address", example = "123 Main St, Hanoi")
     private String address;
 
