@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.profile.BiddingProductResponse;
@@ -368,5 +370,32 @@ public class ProfileController {
                 return ResponseEntity.ok(ApiResponse.ok(response,
                                 response != null ? "Yêu cầu nâng cấp đã được lấy thành công"
                                                 : "Bạn chưa có yêu cầu nâng cấp"));
+        }
+
+        @PostMapping("/avatar")
+        @Operation(summary = "Upload user avatar", description = "Upload or update user avatar. Old avatar will be automatically deleted if exists. Max 5MB, min 100x100px, max 2000x2000px.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar uploaded successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file or validation errors"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<UserProfileResponse>> uploadAvatar(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Avatar image file", required = true) @RequestPart("file") MultipartFile file) {
+                UserProfileResponse profile = profileService.uploadAvatar(userDetails.getUserId(), file);
+                return ResponseEntity.ok(ApiResponse.ok(profile, "Ảnh đại diện đã được tải lên thành công"));
+        }
+
+        @DeleteMapping("/avatar")
+        @Operation(summary = "Delete user avatar", description = "Delete current user avatar")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar deleted successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "No avatar to delete"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<UserProfileResponse>> deleteAvatar(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                UserProfileResponse profile = profileService.deleteAvatar(userDetails.getUserId());
+                return ResponseEntity.ok(ApiResponse.ok(profile, "Ảnh đại diện đã được xóa thành công"));
         }
 }

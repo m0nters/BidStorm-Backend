@@ -40,13 +40,19 @@ public class S3Service {
     private String region;
 
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "webp");
+
+    // (actually Spring Boot itself will handle it, check `application.yaml`)
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
-    // Image dimension constraints
+    // Product image dimension constraints
     private static final int MIN_WIDTH = 400;
     private static final int MIN_HEIGHT = 600;
     private static final int MAX_WIDTH = 5000;
     private static final int MAX_HEIGHT = 5000;
+
+    // Avatar image dimension constraints (more relaxed)
+    private static final int AVATAR_MIN_SIZE = 100; // 100x100 minimum
+    private static final int AVATAR_MAX_SIZE = 2000; // 2000x2000 maximum
 
     /**
      * Upload a file to S3 and return the public URL
@@ -196,6 +202,120 @@ public class S3Service {
         } catch (Exception e) {
             log.error("Error deleting file: {}", e.getMessage(), e);
             throw new FileUploadException("Lỗi khi xóa file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Upload an avatar file to S3 with relaxed dimension constraints
+     * 
+     * @param file   The multipart file to upload
+     * @param folder The folder path within the bucket (e.g., "avatars")
+     * @return The public URL of the uploaded file
+     * @throws FileUploadException if upload fails or validation errors occur
+     */
+    public String uploadAvatar(MultipartFile file, String folder) {
+        log.debug("Uploading avatar: {} to folder: {}", file.getOriginalFilename(), folder);
+
+        // Validate file is not empty
+        if (file.isEmpty()) {
+            throw new FileUploadException("Ảnh đại diện không được để trống");
+        }
+
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new FileUploadException(
+                    String.format("Ảnh đại diện quá lớn. Tối đa %dMB, file hiện tại: %.2fMB",
+                            MAX_FILE_SIZE / (1024 * 1024),
+                            file.getSize() / (1024.0 * 1024.0)));
+        }
+
+        // Validate file type
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !isValidImageFile(originalFilename)) {
+            throw new FileUploadException(
+                    "Ảnh đại diện không đúng định dạng. Chỉ chấp nhận file ảnh với định dạng: "
+                            + String.join(", ", ALLOWED_EXTENSIONS));
+        }
+
+        // Read file bytes once
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException e) {
+            log.error("Error reading avatar file bytes: {}", e.getMessage());
+            throw new FileUploadException("Lỗi khi đọc file ảnh: " + e.getMessage());
+        }
+
+        // Validate image dimensions with avatar-specific constraints
+        try {
+            log.debug("Validating avatar image dimensions for: {}", originalFilename);
+
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(fileBytes));
+
+            if (image == null) {
+                log.error("ImageIO.read() returned null for avatar file: {}", originalFilename);
+                throw new FileUploadException(
+                        String.format("Không thể đọc file ảnh '%s'. File có thể bị hỏng hoặc định dạng không hợp lệ.",
+                                originalFilename));
+            }
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            log.info("Avatar image dimensions: {}x{} for file: {}", width, height, originalFilename);
+
+            // Check minimum dimensions
+            if (width < AVATAR_MIN_SIZE || height < AVATAR_MIN_SIZE) {
+                throw new FileUploadException(
+                        String.format(
+                                "Ảnh đại diện quá nhỏ. Tối thiểu %dx%d pixel, ảnh hiện tại: %dx%d pixel",
+                                AVATAR_MIN_SIZE, AVATAR_MIN_SIZE, width, height));
+            }
+
+            // Check maximum dimensions
+            if (width > AVATAR_MAX_SIZE || height > AVATAR_MAX_SIZE) {
+                throw new FileUploadException(
+                        String.format(
+                                "Ảnh đại diện quá lớn. Tối đa %dx%d pixel, ảnh hiện tại: %dx%d pixel",
+                                AVATAR_MAX_SIZE, AVATAR_MAX_SIZE, width, height));
+            }
+
+            log.debug("Avatar image dimensions validated successfully: {}x{}", width, height);
+
+        } catch (FileUploadException e) {
+            throw e; // Re-throw our custom exceptions
+        } catch (IOException e) {
+            log.error("Error reading avatar image dimensions: {}", e.getMessage());
+            throw new FileUploadException("Lỗi khi đọc thông tin ảnh: " + e.getMessage());
+        }
+
+        // Generate unique filename
+        String extension = getFileExtension(originalFilename);
+        String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
+        String key = folder + "/" + uniqueFilename;
+
+        try {
+            // Create put request
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(file.getContentType())
+                    .build();
+
+            // Upload file using the pre-read bytes
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(fileBytes));
+
+            // Generate public URL
+            String publicUrl = String.format("https://%s.s3.%s.amazonaws.com/%s",
+                    bucketName, region, key);
+
+            log.info("Avatar uploaded successfully: {}", publicUrl);
+            return publicUrl;
+
+        } catch (S3Exception e) {
+            log.error("S3 error uploading avatar: {}", e.getMessage(), e);
+            throw new FileUploadException("Lỗi khi upload ảnh đại diện lên S3: " + e.awsErrorDetails().errorMessage(),
+                    e);
         }
     }
 

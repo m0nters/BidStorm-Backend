@@ -50,6 +50,9 @@ public class LoginResponse {
         @Schema(description = "User role", example = "BIDDER")
         private String role;
 
+        @Schema(description = "User avatar URL", example = "https://bucket.s3.region.amazonaws.com/avatars/xxx.jpg")
+        private String avatarUrl;
+
         @Schema(description = "Email verified status", example = "true")
         private Boolean emailVerified;
 

@@ -34,6 +34,9 @@ public class UserProfileResponse {
     @Schema(description = "User role", example = "BIDDER")
     private String role;
 
+    @Schema(description = "User avatar URL", example = "https://bucket.s3.region.amazonaws.com/avatars/xxx.jpg")
+    private String avatarUrl;
+
     @Schema(description = "Number of positive ratings", example = "8")
     private Integer positiveRating;
 

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.taitrinh.online_auction.dto.profile.BiddingProductResponse;
 import com.taitrinh.online_auction.dto.profile.ChangePasswordRequest;
@@ -52,6 +53,7 @@ public class ProfileService {
     private final BidHistoryRepository bidHistoryRepository;
     private final OrderCompletionRepository orderCompletionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final S3Service s3Service;
 
     /**
      * Get user profile with rating information
@@ -68,6 +70,7 @@ public class ProfileService {
                 .address(user.getAddress())
                 .birthDate(user.getBirthDate())
                 .role(user.getRole().getName())
+                .avatarUrl(user.getAvatarUrl())
                 .positiveRating(user.getPositiveRating())
                 .negativeRating(user.getNegativeRating())
                 .ratingPercentage(user.getRatingPercentage())
@@ -729,5 +732,64 @@ public class ProfileService {
                     .orderId(orderId)
                     .build();
         });
+    }
+
+    /**
+     * Upload user avatar
+     * If user already has an avatar, it will be deleted from S3 before uploading
+     * the new one
+     */
+    @Transactional
+    public UserProfileResponse uploadAvatar(Long userId, MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        String oldAvatarUrl = user.getAvatarUrl();
+
+        // Upload new avatar
+        String avatarUrl = s3Service.uploadAvatar(file, "avatars");
+        user.setAvatarUrl(avatarUrl);
+        userRepository.save(user);
+
+        // Delete old avatar from S3 if exists
+        if (oldAvatarUrl != null && !oldAvatarUrl.isEmpty()) {
+            try {
+                s3Service.deleteFile(oldAvatarUrl);
+                log.info("Deleted old avatar for user: {}", userId);
+            } catch (Exception e) {
+                log.warn("Failed to delete old avatar for user {}: {}", userId, e.getMessage());
+            }
+        }
+
+        log.info("Avatar uploaded successfully for user: {}", userId);
+        return getUserProfile(userId);
+    }
+
+    /**
+     * Delete user avatar
+     */
+    @Transactional
+    public UserProfileResponse deleteAvatar(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+            throw new BadRequestException("Bạn chưa có ảnh đại diện");
+        }
+
+        // Delete from S3
+        try {
+            s3Service.deleteFile(user.getAvatarUrl());
+        } catch (Exception e) {
+            log.error("Failed to delete avatar from S3 for user {}: {}", userId, e.getMessage());
+            throw new BadRequestException("Lỗi khi xóa ảnh đại diện: " + e.getMessage());
+        }
+
+        // Update user record
+        user.setAvatarUrl("https://bidstorm.s3.ap-southeast-2.amazonaws.com/avatar.png");
+        userRepository.save(user);
+
+        log.info("Avatar deleted successfully for user: {}", userId);
+        return getUserProfile(userId);
     }
 }
