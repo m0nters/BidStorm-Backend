@@ -21,16 +21,21 @@ import com.taitrinh.online_auction.dto.profile.BiddingProductResponse;
 import com.taitrinh.online_auction.dto.profile.ChangePasswordRequest;
 import com.taitrinh.online_auction.dto.profile.CreateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.FavoriteProductResponse;
+import com.taitrinh.online_auction.dto.profile.MyUpgradeRequestResponse;
 import com.taitrinh.online_auction.dto.profile.ReviewResponse;
 import com.taitrinh.online_auction.dto.profile.RevieweeProfileResponse;
 import com.taitrinh.online_auction.dto.profile.SellerActiveProductResponse;
 import com.taitrinh.online_auction.dto.profile.SellerEndedProductResponse;
+import com.taitrinh.online_auction.dto.profile.SubmitUpgradeRequestRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
+import com.taitrinh.online_auction.entity.UpgradeRequest;
+import com.taitrinh.online_auction.entity.User;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
 import com.taitrinh.online_auction.service.ProfileService;
+import com.taitrinh.online_auction.service.UpgradeRequestService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,6 +55,7 @@ import lombok.RequiredArgsConstructor;
 public class ProfileController {
 
         private final ProfileService profileService;
+        private final UpgradeRequestService upgradeRequestService;
 
         @GetMapping
         @Operation(summary = "Get current user profile", description = "Get current authenticated user's profile information with rating statistics")
@@ -319,5 +325,48 @@ public class ProfileController {
                                 userDetails.getUserId(),
                                 PageRequest.of(page, size));
                 return ResponseEntity.ok(ApiResponse.ok(products, "Danh sách sản phẩm đã kết thúc có người thắng"));
+        }
+
+        @PostMapping("/upgrade-request")
+        @Operation(summary = "Submit upgrade request to become seller", description = "Bidder can request to upgrade their account to seller role for 7 days")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Upgrade request submitted successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Already have pending/approved request"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Void>> submitUpgradeRequest(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Valid @RequestBody SubmitUpgradeRequestRequest request) {
+                upgradeRequestService.submitUpgradeRequest(userDetails.getUserId(), request.getReason());
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.ok(null, "Yêu cầu nâng cấp đã được gửi thành công"));
+        }
+
+        @GetMapping("/upgrade-request")
+        @Operation(summary = "Get my upgrade request status", description = "Check the status of your upgrade request (if exists)")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Request status retrieved successfully (null if no request)"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<MyUpgradeRequestResponse>> getMyUpgradeRequest(
+                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                UpgradeRequest request = upgradeRequestService.getMyUpgradeRequest(userDetails.getUserId());
+
+                MyUpgradeRequestResponse response = null;
+                if (request != null) {
+                        User admin = request.getAdmin();
+                        response = MyUpgradeRequestResponse.builder()
+                                        .id(request.getId())
+                                        .reason(request.getReason())
+                                        .status(request.getStatus().name())
+                                        .adminName(admin != null ? admin.getFullName() : null)
+                                        .reviewedAt(request.getReviewedAt())
+                                        .createdAt(request.getCreatedAt())
+                                        .build();
+                }
+
+                return ResponseEntity.ok(ApiResponse.ok(response,
+                                response != null ? "Yêu cầu nâng cấp đã được lấy thành công"
+                                                : "Bạn chưa có yêu cầu nâng cấp"));
         }
 }

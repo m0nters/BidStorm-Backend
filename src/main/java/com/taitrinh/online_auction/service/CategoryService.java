@@ -51,7 +51,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getSubCategories(Integer parentId) {
         if (!categoryRepository.existsById(parentId)) {
-            throw new ResourceNotFoundException("Category cha", parentId);
+            throw new ResourceNotFoundException("Danh mục cha", parentId);
         }
 
         return categoryRepository.findByParentId(parentId).stream()
@@ -65,7 +65,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryResponse getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", id));
 
         return categoryMapper.toResponseWithChildren(category);
     }
@@ -76,7 +76,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryResponse getCategoryBySlug(String slug) {
         Category category = categoryRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", slug));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", slug));
 
         return categoryMapper.toResponseWithChildren(category);
     }
@@ -91,12 +91,12 @@ public class CategoryService {
         if (request.getParentId() != null) {
             parent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(
-                            () -> new ResourceNotFoundException("Category cha", request.getParentId()));
+                            () -> new ResourceNotFoundException("Danh mục cha", request.getParentId()));
 
             // Check if parent already has a parent (only 2 levels allowed)
             if (parent.getParent() != null) {
                 throw new BadRequestException(
-                        "Không thể tạo category cháu dưới category con. Chỉ cho phép 2 cấp.");
+                        "Không thể tạo danh mục cháu dưới danh mục con. Chỉ cho phép 2 cấp.");
             }
         }
 
@@ -106,7 +106,7 @@ public class CategoryService {
                 : categoryRepository.existsByNameAndParentIsNull(request.getName());
 
         if (isDuplicate) {
-            throw new BadRequestException("Tên category '" + request.getName() + "' đã tồn tại");
+            throw new BadRequestException("Tên danh mục '" + request.getName() + "' đã tồn tại");
         }
 
         // Generate slug
@@ -143,29 +143,29 @@ public class CategoryService {
     @Transactional
     public CategoryResponse updateCategory(Integer id, CreateCategoryRequest request) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", id));
 
         // Validate and get new parent if parentId is provided
         Category newParent = null;
         if (request.getParentId() != null) {
             // Cannot set parent to itself
             if (request.getParentId().equals(id)) {
-                throw new BadRequestException("Category không thể là parent của chính nó");
+                throw new BadRequestException("Danh mục không thể là parent của chính nó");
             }
 
             newParent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(
-                            () -> new ResourceNotFoundException("Category cha", request.getParentId()));
+                            () -> new ResourceNotFoundException("Danh mục cha", request.getParentId()));
 
             // Check if new parent already has a parent (only 2 levels allowed)
             if (!newParent.isParent()) {
-                throw new BadRequestException("Không thể chuyển category vào category con. Chỉ cho phép 2 cấp.");
+                throw new BadRequestException("Không thể chuyển danh mục vào danh mục con. Chỉ cho phép 2 cấp.");
             }
 
             // Check if category has children - cannot move parent category to become a
             // sub-category (because if so there will be 3 levels)
             if (category.hasChildren()) {
-                throw new BadRequestException("Không thể chuyển category cha có con vào category con");
+                throw new BadRequestException("Không thể chuyển một danh mục cha vào làm con một danh mục khác");
             }
         }
 
@@ -182,7 +182,7 @@ public class CategoryService {
                     : categoryRepository.existsByNameAndParentIsNull(request.getName());
 
             if (isDuplicate) {
-                throw new BadRequestException("Tên category '" + request.getName() + "' đã tồn tại");
+                throw new BadRequestException("Tên danh mục '" + request.getName() + "' đã tồn tại");
             }
         }
 
@@ -198,16 +198,16 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục", id));
 
         // Check if category has products
         if (categoryRepository.hasProducts(id)) {
-            throw new BadRequestException("Không thể xóa category có sản phẩm");
+            throw new BadRequestException("Không thể xóa danh mục có sản phẩm");
         }
 
         // Check if category has children
         if (category.hasChildren()) {
-            throw new BadRequestException("Không thể xóa category có con. Xóa category con trước");
+            throw new BadRequestException("Không thể xóa danh mục có con. Xóa danh mục con trước");
         }
 
         categoryRepository.delete(category);

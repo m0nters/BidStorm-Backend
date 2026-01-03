@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/config/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/roles/**").permitAll()
 
                         // Bid endpoints - authenticated users can bid (must be before /products/**
                         // seller rules)

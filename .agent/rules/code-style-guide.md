@@ -2,7 +2,6 @@
 trigger: always_on
 ---
 
-
 ## Exception Handling
 
 1. **Never use generic `RuntimeException`** - Only use `RuntimeException` for truly unexpected/generic errors that don't fall into any category
@@ -87,9 +86,10 @@ trigger: always_on
     - Keep DTOs focused and specific to use case
 
 14. **Mappers:**
-    - Use separate mapper classes/interfaces
-    - One method per mapping type
-    - Include all necessary data transformations
+    - Use separate mapper classes/interfaces in the `mapper` package
+    - **NEVER create private mapper methods in service classes**
+    - Create dedicated @Component mapper classes
+    - Inject mappers into services using constructor injection
 
 15. **Logging:**
     - Use `@Slf4j` annotation

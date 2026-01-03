@@ -3,6 +3,7 @@ package com.taitrinh.online_auction.service;
 import org.springframework.stereotype.Service;
 
 import com.taitrinh.online_auction.entity.SystemConfig;
+import com.taitrinh.online_auction.exception.ResourceNotFoundException;
 import com.taitrinh.online_auction.repository.SystemConfigRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -83,5 +84,38 @@ public class ConfigService {
             log.warn("Error getting config '{}', using default: {}", key, defaultValue, e);
             return defaultValue;
         }
+    }
+
+    // ===== Admin configuration management methods =====
+
+    /**
+     * Get all system configurations (for admin)
+     */
+    public java.util.List<SystemConfig> getAllConfigs() {
+        return systemConfigRepository.findAll();
+    }
+
+    /**
+     * Get single configuration by key (for admin)
+     */
+    public SystemConfig getConfigByKey(String key) {
+        return systemConfigRepository.findByKey(key)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "SystemConfig", key));
+    }
+
+    /**
+     * Update configuration value (for admin)
+     */
+    public SystemConfig updateConfig(String key, String value) {
+        SystemConfig config = systemConfigRepository.findByKey(key)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "SystemConfig", key));
+
+        config.setValue(value);
+        SystemConfig updated = systemConfigRepository.save(config);
+
+        log.info("System config '{}' updated to: {}", key, value);
+        return updated;
     }
 }
