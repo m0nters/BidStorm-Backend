@@ -152,19 +152,19 @@ public class ProductService {
     public Page<ProductListResponse> searchProducts(ProductSearchRequest request) {
         log.debug("Searching products with request: {}", request);
 
-        // Map Java property names to database column names for native queries
-        String sortField = mapSortFieldToColumn(request.getSortBy());
-
         Sort.Direction direction = "desc".equalsIgnoreCase(request.getSortDirection())
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
-                Sort.by(direction, sortField));
 
         Page<Product> productPage;
 
         // Search logic
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
+            // For native queries, use database column names
+            String sortField = mapSortFieldToColumn(request.getSortBy());
+            Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
+                    Sort.by(direction, sortField));
+
             if (request.getCategoryId() != null) {
                 // Search by keyword and category
                 productPage = productRepository.searchByTitleAndCategory(
@@ -175,12 +175,18 @@ public class ProductService {
                 // Search by keyword only
                 productPage = productRepository.searchByTitle(request.getKeyword().trim(), pageable);
             }
-        } else if (request.getCategoryId() != null) {
-            // Filter by category only
-            productPage = productRepository.findByCategoryIdOrParentId(request.getCategoryId(), pageable);
         } else {
-            // No filters, return all active products
-            productPage = productRepository.findAll(pageable);
+            // For JPA queries, use Java property names
+            Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
+                    Sort.by(direction, request.getSortBy()));
+
+            if (request.getCategoryId() != null) {
+                // Filter by category only
+                productPage = productRepository.findByCategoryIdOrParentId(request.getCategoryId(), pageable);
+            } else {
+                // No filters, return all active products
+                productPage = productRepository.findAll(pageable);
+            }
         }
 
         return productPage.map(productMapper::toListResponse);
