@@ -67,6 +67,9 @@ public class AuthService {
     @Value("${otp.expiration-minutes:10}")
     private Integer otpExpirationMinutes;
 
+    @Value("${app.default-avatar-url}")
+    private String defaultAvatarUrl;
+
     private final Random random = new SecureRandom();
 
     @Transactional
@@ -79,9 +82,9 @@ public class AuthService {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
-        // Get BIDDER role (default role for new users)
-        Role bidderRole = roleRepository.findById(Role.BIDDER)
-                .orElseThrow(() -> new IllegalStateException("Vai trò BIDDER không tồn tại"));
+        // Get default "BIDDER" role (id = 3)
+        Role bidderRole = roleRepository.findById((short) 3)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", 3));
 
         // Create user
         User user = User.builder()
@@ -90,7 +93,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .address(request.getAddress())
                 .birthDate(request.getBirthDate())
-                .avatarUrl("https://bidstorm.s3.ap-southeast-2.amazonaws.com/avatar.png")
+                .avatarUrl(defaultAvatarUrl)
                 .role(bidderRole)
                 .emailVerified(false)
                 .isActive(true)

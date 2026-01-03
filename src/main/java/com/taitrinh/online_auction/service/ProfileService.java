@@ -2,6 +2,7 @@ package com.taitrinh.online_auction.service;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,6 +55,9 @@ public class ProfileService {
     private final OrderCompletionRepository orderCompletionRepository;
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
+
+    @Value("${app.default-avatar-url}")
+    private String defaultAvatarUrl;
 
     /**
      * Get user profile with rating information
@@ -788,7 +792,7 @@ public class ProfileService {
         }
 
         // Update user record
-        user.setAvatarUrl("https://bidstorm.s3.ap-southeast-2.amazonaws.com/avatar.png");
+        user.setAvatarUrl(defaultAvatarUrl);
         userRepository.save(user);
 
         log.info("Avatar deleted successfully for user: {}", userId);

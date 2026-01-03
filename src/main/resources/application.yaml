@@ -68,6 +68,7 @@ recaptcha:
 app:
   name: BidStorm
   url: ${APP_URL}
+  default-avatar-url: ${DEFAULT_AVATAR_URL}
 
 # CORS Configuration
 cors:

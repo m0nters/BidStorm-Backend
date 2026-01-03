@@ -55,8 +55,7 @@ public class User {
     private LocalDate birthDate;
 
     @Column(name = "avatar_url", columnDefinition = "TEXT")
-    @Builder.Default
-    private String avatarUrl = "https://bidstorm.s3.ap-southeast-2.amazonaws.com/avatar.png";
+    private String avatarUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)

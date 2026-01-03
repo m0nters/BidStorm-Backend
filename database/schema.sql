@@ -16,7 +16,7 @@ CREATE TABLE users (
     full_name                VARCHAR(255) NOT NULL,
     address                  TEXT,
     birth_date               DATE,
-    avatar_url               TEXT DEFAULT 'https://bidstorm.s3.ap-southeast-2.amazonaws.com/avatar.png',
+    avatar_url               TEXT DEFAULT 'https://bidstorm.s3.ap-southeast-2.amazonaws.com/default-avatar.png',
     
     role_id                  SMALLINT NOT NULL DEFAULT 3 REFERENCES roles(id), -- 3 = bidder
     
