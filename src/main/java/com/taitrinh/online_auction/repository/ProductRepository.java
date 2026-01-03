@@ -139,4 +139,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         List<Product> findByIsEndedFalseAndEndTimeBetween(
                         @Param("startTime") java.time.ZonedDateTime startTime,
                         @Param("endTime") java.time.ZonedDateTime endTime);
+
+        // === STATISTICS METHODS ===
+
+        // Count products created after a timestamp
+        long countByCreatedAtAfter(ZonedDateTime timestamp);
+
+        // Count products with zero bids
+        @Query("SELECT COUNT(p) FROM Product p WHERE p.id NOT IN (SELECT DISTINCT b.product.id FROM BidHistory b)")
+        long countZeroBidProducts();
 }

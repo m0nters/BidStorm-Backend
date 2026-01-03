@@ -1,5 +1,6 @@
 package com.taitrinh.online_auction.repository;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -34,4 +35,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByIsActive(Boolean isActive, Pageable pageable);
 
     Page<User> findAllByRole_IdAndIsActive(Short roleId, Boolean isActive, Pageable pageable);
+
+    // === STATISTICS METHODS ===
+
+    // Count users registered after a timestamp
+    long countByCreatedAtAfter(ZonedDateTime timestamp);
 }

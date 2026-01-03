@@ -50,4 +50,28 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
         @Query("SELECT DISTINCT b.bidder FROM BidHistory b WHERE b.product.id = :productId")
         List<User> findDistinctBiddersByProductId(
                         @Param("productId") Long productId);
+
+        // === STATISTICS METHODS ===
+
+        // Top bidders leaderboard (by total spent on completed orders)
+        @Query("SELECT new com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse(" +
+                        "u.id, u.fullName, u.email, SUM(oc.amountCents), COUNT(oc.id)) " +
+                        "FROM OrderCompletion oc " +
+                        "JOIN oc.product p " +
+                        "JOIN p.winner u " +
+                        "WHERE oc.status = 'COMPLETED' " +
+                        "GROUP BY u.id, u.fullName, u.email " +
+                        "ORDER BY SUM(oc.amountCents) DESC, COUNT(oc.id) DESC")
+        List<com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse> getTopBidders(Pageable pageable);
+
+        // Top sellers leaderboard (by total revenue from completed orders)
+        @Query("SELECT new com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse(" +
+                        "u.id, u.fullName, u.email, SUM(oc.amountCents), COUNT(oc.id)) " +
+                        "FROM OrderCompletion oc " +
+                        "JOIN oc.product p " +
+                        "JOIN p.seller u " +
+                        "WHERE oc.status = 'COMPLETED' " +
+                        "GROUP BY u.id, u.fullName, u.email " +
+                        "ORDER BY SUM(oc.amountCents) DESC, COUNT(oc.id) DESC")
+        List<com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse> getTopSellers(Pageable pageable);
 }

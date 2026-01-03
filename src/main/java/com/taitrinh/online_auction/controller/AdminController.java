@@ -18,18 +18,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
+import com.taitrinh.online_auction.dto.admin.AdminStatisticsOverviewResponse;
+import com.taitrinh.online_auction.dto.admin.BasicStatisticsResponse;
+import com.taitrinh.online_auction.dto.admin.CategoryRevenueResponse;
 import com.taitrinh.online_auction.dto.admin.ChangeUserRoleRequest;
-import com.taitrinh.online_auction.dto.admin.RevenueStatisticsResponse;
+import com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse;
+import com.taitrinh.online_auction.dto.admin.PendingPaymentsResponse;
 import com.taitrinh.online_auction.dto.admin.SystemConfigResponse;
 import com.taitrinh.online_auction.dto.admin.UpdateSystemConfigRequest;
 import com.taitrinh.online_auction.dto.admin.UpgradeRequestResponse;
 import com.taitrinh.online_auction.dto.admin.UserDetailResponse;
 import com.taitrinh.online_auction.dto.admin.UserListResponse;
 import com.taitrinh.online_auction.entity.SystemConfig;
+import com.taitrinh.online_auction.enums.TimePeriod;
 import com.taitrinh.online_auction.mapper.SystemConfigMapper;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
+import com.taitrinh.online_auction.service.AdminStatisticsService;
 import com.taitrinh.online_auction.service.ConfigService;
-import com.taitrinh.online_auction.service.RevenueStatisticsService;
 import com.taitrinh.online_auction.service.UpgradeRequestService;
 import com.taitrinh.online_auction.service.UserService;
 
@@ -51,9 +56,9 @@ public class AdminController {
 
     private final UserService userService;
     private final UpgradeRequestService upgradeRequestService;
-    private final RevenueStatisticsService revenueStatisticsService;
     private final ConfigService configService;
     private final SystemConfigMapper systemConfigMapper;
+    private final AdminStatisticsService adminStatisticsService;
 
     // ===== User Management =====
 
@@ -150,11 +155,55 @@ public class AdminController {
 
     // ===== Statistics =====
 
-    @GetMapping("/statistics/revenue")
-    @Operation(summary = "Get revenue statistics (ADMIN only)", description = "Get total revenue from completed orders, including order count and average order value")
-    public ResponseEntity<ApiResponse<RevenueStatisticsResponse>> getRevenueStatistics() {
-        RevenueStatisticsResponse stats = revenueStatisticsService.getRevenueStatistics();
-        return ResponseEntity.ok(ApiResponse.ok(stats, "Thống kê doanh thu đã được lấy thành công"));
+    @GetMapping("/statistics/overview")
+    @Operation(summary = "Get statistics overview (ADMIN only)", description = "Get complete statistics overview with all metrics")
+    public ResponseEntity<ApiResponse<AdminStatisticsOverviewResponse>> getStatisticsOverview(
+            @Parameter(description = "Time period for statistics", example = "LAST_30_DAYS") @RequestParam(defaultValue = "LAST_30_DAYS") TimePeriod timePeriod,
+            @Parameter(description = "Leaderboard limit", example = "10") @RequestParam(defaultValue = "10") int leaderboardLimit) {
+
+        AdminStatisticsOverviewResponse stats = adminStatisticsService.getOverviewStatistics(timePeriod,
+                leaderboardLimit);
+        return ResponseEntity.ok(ApiResponse.ok(stats, "Tổng quan thống kê đã được lấy thành công"));
+    }
+
+    @GetMapping("/statistics/basic")
+    @Operation(summary = "Get basic statistics (ADMIN only)", description = "Get basic count statistics (new auctions, users, ​upgrades, zero-bid products)")
+    public ResponseEntity<ApiResponse<BasicStatisticsResponse>> getBasicStatistics(
+            @Parameter(description = "Time period for statistics", example = "LAST_30_DAYS") @RequestParam(defaultValue = "LAST_30_DAYS") TimePeriod timePeriod) {
+
+        BasicStatisticsResponse stats = adminStatisticsService.getBasicStatistics(timePeriod);
+        return ResponseEntity.ok(ApiResponse.ok(stats, "Thống kê cơ bản đã được lấy thành công"));
+    }
+
+    @GetMapping("/statistics/financial")
+    @Operation(summary = "Get financial statistics (ADMIN only)", description = "Get total revenue, revenue by category, and pending payments")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getFinancialStatistics() {
+        com.taitrinh.online_auction.dto.admin.RevenueStatisticsResponse totalRevenue = adminStatisticsService
+                .getRevenueStatistics();
+        List<CategoryRevenueResponse> categoryRevenue = adminStatisticsService.getRevenueByCategory();
+        PendingPaymentsResponse pendingPayments = adminStatisticsService.getPendingPayments();
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("totalRevenue", totalRevenue);
+        response.put("categoryRevenue", categoryRevenue);
+        response.put("pendingPayments", pendingPayments);
+
+        return ResponseEntity.ok(ApiResponse.ok(response, "Thống kê tài chính đã được lấy thành công"));
+    }
+
+    @GetMapping("/statistics/leaderboards")
+    @Operation(summary = "Get leaderboards (ADMIN only)", description = "Get top bidders and sellers leaderboards")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getLeaderboards(
+            @Parameter(description = "Leaderboard limit", example = "10") @RequestParam(defaultValue = "10") int limit) {
+
+        List<LeaderboardEntryResponse> topBidders = adminStatisticsService.getTopBidders(limit);
+        List<LeaderboardEntryResponse> topSellers = adminStatisticsService.getTopSellers(limit);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("topBidders", topBidders);
+        response.put("topSellers", topSellers);
+
+        return ResponseEntity.ok(ApiResponse.ok(response, "Bảng xếp hạng đã được lấy thành công"));
     }
 
     // ===== System Configuration =====

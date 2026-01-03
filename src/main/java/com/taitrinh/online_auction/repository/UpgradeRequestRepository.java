@@ -23,4 +23,12 @@ public interface UpgradeRequestRepository extends JpaRepository<UpgradeRequest, 
 
     Optional<UpgradeRequest> findByBidder_IdAndStatusAndCreatedAtAfter(Long bidderId, UpgradeStatus status,
             ZonedDateTime time);
+
+    // === STATISTICS METHODS ===
+
+    // Count requests by status
+    long countByStatus(UpgradeStatus status);
+
+    // Count approved/rejected requests after timestamp
+    long countByStatusAndReviewedAtAfter(UpgradeStatus status, ZonedDateTime timestamp);
 }

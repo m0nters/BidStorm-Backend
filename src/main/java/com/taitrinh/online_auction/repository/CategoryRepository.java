@@ -37,4 +37,16 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     Optional<Category> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
+
+    // === STATISTICS METHODS ===
+
+    // Get revenue by category
+    @Query("SELECT new com.taitrinh.online_auction.dto.admin.CategoryRevenueResponse(" +
+            "c.id, c.name, COALESCE(SUM(oc.amountCents), 0), COUNT(DISTINCT oc.id)) " +
+            "FROM Category c " +
+            "LEFT JOIN Product p ON p.category.id = c.id " +
+            "LEFT JOIN OrderCompletion oc ON oc.product.id = p.id AND oc.status = 'COMPLETED' " +
+            "GROUP BY c.id, c.name " +
+            "ORDER BY COALESCE(SUM(oc.amountCents), 0) DESC")
+    List<com.taitrinh.online_auction.dto.admin.CategoryRevenueResponse> getRevenueByCategory();
 }
