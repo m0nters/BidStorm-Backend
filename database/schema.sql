@@ -12,7 +12,7 @@ CREATE TABLE roles (
 CREATE TABLE users (
     id                       BIGSERIAL PRIMARY KEY,
     email                    VARCHAR(255) UNIQUE NOT NULL,
-    password_hash            VARCHAR(255) NOT NULL,
+    password_hash            VARCHAR(255),
     full_name                VARCHAR(255) NOT NULL,
     address                  TEXT,
     birth_date               DATE,
@@ -31,7 +31,10 @@ CREATE TABLE users (
     
     is_active                BOOLEAN NOT NULL DEFAULT true,
     created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    oauth_provider           VARCHAR(20) DEFAULT 'LOCAL' CHECK (oauth_provider IN ('LOCAL', 'GOOGLE')),
+    oauth_provider_id        VARCHAR(255),
 );
 
 CREATE INDEX idx_users_email          ON users(email);

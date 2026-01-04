@@ -15,14 +15,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
+import com.taitrinh.online_auction.dto.auth.AuthResponse;
 import com.taitrinh.online_auction.dto.auth.ForgotPasswordRequest;
 import com.taitrinh.online_auction.dto.auth.LoginRequest;
 import com.taitrinh.online_auction.dto.auth.LoginResponse;
 import com.taitrinh.online_auction.dto.auth.OtpRequest;
 import com.taitrinh.online_auction.dto.auth.RegisterRequest;
 import com.taitrinh.online_auction.dto.auth.ResetPasswordRequest;
+import com.taitrinh.online_auction.dto.request.GoogleAuthRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
 import com.taitrinh.online_auction.service.AuthService;
+import com.taitrinh.online_auction.service.OAuth2Service;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
         private final AuthService authService;
+        private final OAuth2Service oAuth2Service;
 
         @Value("${jwt.refresh-token-expiration}")
         private Long refreshTokenExpiration;
@@ -202,6 +206,33 @@ public class AuthController {
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
                                 .body(ApiResponse.ok(null, "Đăng xuất thành công"));
+        }
+
+        @PostMapping("/google/callback")
+        @Operation(summary = "Google One Tap callback", description = "Handle Google One Tap authentication with JWT credential. If user exists, login. If not, create new account automatically.")
+        @ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Google authentication successful"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid JWT credential or Google authentication failed")
+        })
+        public ResponseEntity<ApiResponse<AuthResponse>> googleCallback(
+                        @Valid @RequestBody GoogleAuthRequest request) {
+                AuthResponse authResponse = oAuth2Service.authenticateWithGoogle(request.getCredential());
+
+                // Create httpOnly cookie for refresh token
+                ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
+                                .httpOnly(true)
+                                .secure(cookieSecure)
+                                .path("/")
+                                .maxAge(refreshTokenExpiration / 1000)
+                                .sameSite(cookieSameSite)
+                                .build();
+
+                // Remove refresh token from response body
+                authResponse.setRefreshToken(null);
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                                .body(ApiResponse.ok(authResponse, "Đăng nhập Google thành công"));
         }
 
 }

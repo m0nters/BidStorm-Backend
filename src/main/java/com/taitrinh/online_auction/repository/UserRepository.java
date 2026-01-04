@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.enums.OAuthProvider;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -35,6 +36,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByIsActive(Boolean isActive, Pageable pageable);
 
     Page<User> findAllByRole_IdAndIsActive(Short roleId, Boolean isActive, Pageable pageable);
+
+    // OAuth support
+    Optional<User> findByOauthProviderAndOauthProviderId(OAuthProvider provider, String providerId);
 
     // === STATISTICS METHODS ===
 
