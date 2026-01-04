@@ -1,6 +1,7 @@
 package com.taitrinh.online_auction.controller;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.product.BidHistoryResponse;
 import com.taitrinh.online_auction.dto.product.CreateProductRequest;
@@ -36,7 +39,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
@@ -201,16 +208,15 @@ public class ProductController {
                         @AuthenticationPrincipal UserDetailsImpl userDetails) throws Exception {
 
                 // Parse JSON string to DTO
-                com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.registerModule(new JavaTimeModule());
                 CreateProductWithFilesRequest productData = objectMapper.readValue(productDataJson,
                                 CreateProductWithFilesRequest.class);
 
                 // Validate the DTO
-                jakarta.validation.ValidatorFactory factory = jakarta.validation.Validation
-                                .buildDefaultValidatorFactory();
-                jakarta.validation.Validator validator = factory.getValidator();
-                java.util.Set<jakarta.validation.ConstraintViolation<CreateProductWithFilesRequest>> violations = validator
+                ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+                Validator validator = factory.getValidator();
+                Set<ConstraintViolation<CreateProductWithFilesRequest>> violations = validator
                                 .validate(productData);
 
                 if (!violations.isEmpty()) {

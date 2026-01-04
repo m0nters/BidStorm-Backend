@@ -356,9 +356,9 @@ public class ProductService {
             throw new BadRequestException("Giá mua ngay phải lớn hơn giá khởi điểm");
         }
 
-        // Validate minimum 3 images
-        if (request.getImages() == null || request.getImages().size() < 3) {
-            throw new BadRequestException("Phải có ít nhất 3 ảnh cho sản phẩm đấu giá");
+        // Validate minimum 4 images
+        if (request.getImages() == null || request.getImages().size() < 4) {
+            throw new BadRequestException("Phải có ít nhất 1 ảnh chính và 3 ảnh phụ cho sản phẩm");
         }
 
         // Validate at least one image is marked as primary
@@ -366,7 +366,7 @@ public class ProductService {
                 .filter(CreateProductRequest.ProductImageRequest::getIsPrimary)
                 .count();
         if (primaryCount == 0) {
-            throw new BadRequestException("Phải có ít nhất một ảnh được đánh dấu là ảnh chính");
+            throw new BadRequestException("Phải có một ảnh được đánh dấu là ảnh chính");
         }
         if (primaryCount > 1) {
             throw new BadRequestException("Chỉ có thể có một ảnh được đánh dấu là ảnh chính");
@@ -491,8 +491,8 @@ public class ProductService {
         }
 
         // Validate image files
-        if (imageFiles == null || imageFiles.length < 3) {
-            throw new BadRequestException("Phải có ít nhất 3 ảnh cho sản phẩm đấu giá");
+        if (imageFiles == null || imageFiles.length < 4) {
+            throw new BadRequestException("Phải có ít nhất 1 ảnh chính và 3 ảnh phụ cho sản phẩm");
         }
         if (imageFiles.length > 10) {
             throw new BadRequestException("Tối đa 10 ảnh cho một sản phẩm");
