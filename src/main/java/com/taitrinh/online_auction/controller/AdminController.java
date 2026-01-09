@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,6 +105,15 @@ public class AdminController {
 
         userService.unbanUser(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Người dùng đã được mở cấm thành công"));
+    }
+
+    @DeleteMapping("/users/{id}")
+    @Operation(summary = "Delete user (ADMIN only)", description = "Delete a user by ID")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @Parameter(description = "User ID to delete", example = "5") @PathVariable Long id) {
+
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã xóa người dùng thành công"));
     }
 
     @PatchMapping("/users/{id}/role")

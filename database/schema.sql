@@ -22,7 +22,7 @@ CREATE TABLE users (
     
     -- Quyền bán tạm thời 7 ngày
     seller_expires_at        TIMESTAMPTZ,
-    seller_upgraded_by       BIGINT REFERENCES users(id),
+    seller_upgraded_by       BIGINT REFERENCES users(id) ON DELETE SET NULL,
     
     positive_rating          INTEGER NOT NULL DEFAULT 0,
     negative_rating          INTEGER NOT NULL DEFAULT 0,
@@ -101,8 +101,8 @@ CREATE TABLE products (
     start_time            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     end_time              TIMESTAMPTZ NOT NULL,
     
-    winner_id             BIGINT REFERENCES users(id),
-    highest_bidder_id     BIGINT REFERENCES users(id),              -- current highest (for quick access)
+    winner_id             BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    highest_bidder_id     BIGINT REFERENCES users(id) ON DELETE SET NULL,              -- current highest (for quick access)
     
     bid_count             INTEGER NOT NULL DEFAULT 0,
     view_count            INTEGER NOT NULL DEFAULT 0,
@@ -163,7 +163,7 @@ CREATE INDEX idx_favorites_user_created ON favorites(user_id, created_at DESC);
 CREATE TABLE bid_history (
     id              BIGSERIAL PRIMARY KEY,
     product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    bidder_id       BIGINT NOT NULL REFERENCES users(id),
+    bidder_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     bid_amount      DECIMAL(15,2) NOT NULL,      -- Actual bid amount shown publicly
     max_bid_amount  DECIMAL(15,2) NOT NULL,      -- User's maximum willing to pay (automatic bidding)
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -194,7 +194,7 @@ CREATE TABLE description_logs (
 CREATE TABLE comments (
     id              BIGSERIAL PRIMARY KEY,
     product_id      BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    user_id         BIGINT NOT NULL REFERENCES users(id),
+    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     parent_id       BIGINT REFERENCES comments(id) ON DELETE CASCADE,  -- NULL = top-level question
     content         TEXT NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -207,8 +207,8 @@ CREATE INDEX idx_comments_thread ON comments(parent_id);  -- for finding replies
 CREATE TABLE reviews (
     id           BIGSERIAL PRIMARY KEY,
     product_id   BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    reviewer_id  BIGINT NOT NULL REFERENCES users(id),
-    reviewee_id  BIGINT NOT NULL REFERENCES users(id),
+    reviewer_id  BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reviewee_id  BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     rating       SMALLINT NOT NULL CHECK (rating IN (-1, 1)),
     comment      TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -222,7 +222,7 @@ CREATE TABLE upgrade_requests (
     reason      TEXT,
     status      VARCHAR(20) NOT NULL DEFAULT 'pending'
                 CHECK (status IN ('pending', 'approved', 'rejected')),
-    admin_id    BIGINT REFERENCES users(id),
+    admin_id    BIGINT REFERENCES users(id) ON DELETE SET NULL,
     reviewed_at TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -231,7 +231,7 @@ CREATE TABLE upgrade_requests (
 CREATE TABLE order_completions (
     id                      BIGSERIAL PRIMARY KEY,
     product_id              BIGINT UNIQUE NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    winner_id               BIGINT NOT NULL REFERENCES users(id),
+    winner_id               BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     
     -- Status: PENDING_PAYMENT → PAID → SHIPPED → COMPLETED (or CANCELLED before payment)
     status                  VARCHAR(30) NOT NULL DEFAULT 'PENDING_PAYMENT' 
@@ -273,7 +273,7 @@ CREATE INDEX idx_order_completions_stripe_pi ON order_completions(stripe_payment
 CREATE TABLE order_chat_messages (
     id          BIGSERIAL PRIMARY KEY,
     product_id  BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    sender_id   BIGINT NOT NULL REFERENCES users(id),
+    sender_id   BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     message     TEXT NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

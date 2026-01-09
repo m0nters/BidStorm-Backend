@@ -51,6 +51,7 @@ public class OrderCompletion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "winner_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User winner;
 
     @Enumerated(EnumType.STRING)

@@ -47,6 +47,7 @@ public class BidHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidder_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User bidder;
 
     @Column(name = "bid_amount", nullable = false, precision = 15, scale = 2)

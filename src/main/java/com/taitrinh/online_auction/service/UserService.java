@@ -103,6 +103,20 @@ public class UserService {
     }
 
     /**
+     * Delete user (ADMIN only)
+     * Related records are automatically deleted via database CASCADE constraints
+     */
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        userRepository.delete(user);
+
+        log.info("User {} has been deleted", userId);
+    }
+
+    /**
      * Change user role (ADMIN only)
      * Revokes all tokens to force re-authentication with new role
      */

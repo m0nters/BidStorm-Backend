@@ -41,6 +41,7 @@ public class OrderChatMessage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")

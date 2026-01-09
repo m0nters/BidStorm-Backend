@@ -94,10 +94,12 @@ public class Product {
 
     @ManyToOne
     @JoinColumn(name = "winner_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User winner;
 
     @ManyToOne
     @JoinColumn(name = "highest_bidder_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User highestBidder;
 
     @Column(name = "bid_count", nullable = false)

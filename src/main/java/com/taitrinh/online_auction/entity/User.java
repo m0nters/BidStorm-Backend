@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.taitrinh.online_auction.enums.OAuthProvider;
@@ -79,6 +81,7 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "seller_upgraded_by")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User sellerUpgradedBy;
 
     @Column(name = "positive_rating", nullable = false)

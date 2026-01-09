@@ -44,10 +44,12 @@ public class Review {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User reviewer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewee_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User reviewee;
 
     @Column(nullable = false)

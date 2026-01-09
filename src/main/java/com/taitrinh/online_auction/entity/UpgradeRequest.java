@@ -52,6 +52,7 @@ public class UpgradeRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User admin;
 
     @Column(name = "reviewed_at")
