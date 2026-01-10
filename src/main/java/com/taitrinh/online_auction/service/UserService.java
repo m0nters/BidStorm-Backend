@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import com.taitrinh.online_auction.mapper.UserMapper;
 import com.taitrinh.online_auction.repository.RefreshTokenRepository;
 import com.taitrinh.online_auction.repository.RoleRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.service.email.AuthEmailService;
+import com.taitrinh.online_auction.util.PasswordUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +34,8 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthEmailService authEmailService;
 
     /**
      * Get all users with pagination and optional filters
@@ -138,5 +143,30 @@ public class UserService {
 
         log.info("User {} role changed to {} (roleId: {}) and all tokens revoked", userId, newRole.getName(),
                 newRoleId);
+    }
+
+    /**
+     * Reset user password to a random generated password (ADMIN only)
+     * Generates a secure random password, saves hash to database, and emails user
+     */
+    @Transactional
+    public void adminResetPassword(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        // Generate random secure password (16 characters)
+        String newPassword = PasswordUtil.generateRandomPassword();
+
+        // Hash and save the password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Revoke all refresh tokens for security
+        refreshTokenRepository.revokeAllByUserId(userId, ZonedDateTime.now());
+
+        // Send email to user with new password
+        authEmailService.sendAdminPasswordReset(user.getEmail(), user.getFullName(), newPassword);
+
+        log.info("Password reset by admin for user: {}. All tokens revoked.", userId);
     }
 }

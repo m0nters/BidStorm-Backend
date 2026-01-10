@@ -157,4 +157,50 @@ public class AuthEmailService {
 
         return templateService.buildEmail("Đặt lại mật khẩu - BidStorm", content);
     }
+
+    /**
+     * Send admin password reset notification email
+     */
+    @Async
+    public void sendAdminPasswordReset(String toEmail, String fullName, String newPassword) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(String.format("%s - Mật khẩu đã được đặt lại", templateService.getAppName()));
+            helper.setText(buildAdminPasswordResetContent(fullName, newPassword), true);
+
+            mailSender.send(message);
+            log.info("Admin password reset email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException | MailException e) {
+            log.error("Failed to send admin password reset email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildAdminPasswordResetContent(String fullName, String newPassword) {
+        String content = String.format(
+                """
+                        <p class="greeting">Xin chào %s,</p>
+
+                        <p class="message">Quản trị viên đã đặt lại mật khẩu tài khoản của bạn. Mật khẩu mới của bạn là:</p>
+
+                        <div class="otp-code" style="text-align: center;">%s</div>
+
+                        <div class="warning-box">
+                            <strong>Lưu ý quan trọng:</strong> Đây là mật khẩu tạm thời. Vui lòng đăng nhập và <strong>thay đổi mật khẩu ngay lập tức</strong> để bảo mật tài khoản của bạn.
+                        </div>
+
+                        <div class="danger-box">
+                            <strong>Bảo mật:</strong> Không chia sẻ mật khẩu này với bất kỳ ai. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ với quản trị viên ngay lập tức.
+                        </div>
+
+                        <p class="message">Sau khi đăng nhập, bạn có thể thay đổi mật khẩu trong phần cài đặt tài khoản.</p>
+                        """,
+                fullName, newPassword);
+
+        return templateService.buildEmail("Mật khẩu đã được đặt lại - BidStorm", content);
+    }
 }

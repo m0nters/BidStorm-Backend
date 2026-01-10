@@ -126,6 +126,15 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(null, "Vai trò người dùng đã được thay đổi thành công"));
     }
 
+    @PatchMapping("/users/{id}/reset-password")
+    @Operation(summary = "Reset user password (ADMIN only)", description = "Generate a random secure password for the user and send it via email. User should change it immediately after logging in.")
+    public ResponseEntity<ApiResponse<Void>> resetUserPassword(
+            @Parameter(description = "User ID", example = "5") @PathVariable Long id) {
+
+        userService.adminResetPassword(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Mật khẩu đã được đặt lại và gửi qua email cho người dùng"));
+    }
+
     // ===== Upgrade Request Management =====
 
     @GetMapping("/upgrade-requests")
