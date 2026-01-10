@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -39,7 +40,6 @@ import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CategoryRepository;
 import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.DescriptionLogRepository;
-import com.taitrinh.online_auction.repository.FavoriteRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
 import com.taitrinh.online_auction.service.email.ProductEmailService;
@@ -58,7 +58,6 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final DescriptionLogRepository descriptionLogRepository;
-    private final FavoriteRepository favoriteRepository;
     private final CommentRepository commentRepository;
     private final ProductMapper productMapper;
     private final ApplicationContext applicationContext;
@@ -164,6 +163,15 @@ public class ProductService {
 
         Page<Product> productPage;
 
+        // Determine status filter
+        Boolean isEndedFilter = null; // null means all
+        if ("active".equals(request.getStatus())) {
+            isEndedFilter = false; // Only active products
+        } else if ("ended".equals(request.getStatus())) {
+            isEndedFilter = true; // Only ended products
+        }
+        // If "all", isEndedFilter remains null
+
         // Search logic
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
             // For native queries, use database column names
@@ -181,17 +189,42 @@ public class ProductService {
                 // Search by keyword only
                 productPage = productRepository.searchByTitle(request.getKeyword().trim(), pageable);
             }
+
+            // Filter by status if not "all"
+            if (isEndedFilter != null) {
+                final Boolean finalIsEndedFilter = isEndedFilter;
+                productPage = new PageImpl<>(
+                        productPage.getContent().stream()
+                                .filter(p -> p.isEnded() == finalIsEndedFilter)
+                                .toList(),
+                        pageable,
+                        productPage.getTotalElements());
+            }
         } else {
             // For JPA queries, use Java property names
             Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
                     Sort.by(direction, request.getSortBy()));
 
             if (request.getCategoryId() != null) {
-                // Filter by category only
-                productPage = productRepository.findByCategoryIdOrParentId(request.getCategoryId(), pageable);
+                // Filter by category
+                if (isEndedFilter != null) {
+                    productPage = productRepository.findByCategoryIdOrParentIdAndIsEnded(
+                            request.getCategoryId(), isEndedFilter, pageable);
+                } else {
+                    productPage = productRepository.findByCategoryIdOrParentId(request.getCategoryId(), pageable);
+                }
             } else {
-                // No filters, return all active products
-                productPage = productRepository.findAll(pageable);
+                // No category filter
+                if (isEndedFilter == null) {
+                    // All products
+                    productPage = productRepository.findAll(pageable);
+                } else if (isEndedFilter) {
+                    // Only ended products
+                    productPage = productRepository.findByIsEndedTrue(pageable);
+                } else {
+                    // Only active products (default)
+                    productPage = productRepository.findByIsEndedFalse(pageable);
+                }
             }
         }
 

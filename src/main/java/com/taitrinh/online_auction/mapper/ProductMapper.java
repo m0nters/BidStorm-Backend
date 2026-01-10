@@ -38,6 +38,7 @@ public abstract class ProductMapper {
     @Mapping(target = "highestBidderName", source = "product.highestBidder", qualifiedByName = "maskUserName")
     @Mapping(target = "highestBidderRating", source = "product.highestBidder", qualifiedByName = "getRatingPercentage")
     @Mapping(target = "isNew", expression = "java(product.isNew(configService.getNewProductHighlightMin()))")
+    @Mapping(target = "isEnded", expression = "java(product.isEnded())")
     public abstract ProductListResponse toListResponse(Product product);
 
     // Map Product to ProductDetailResponse (for detail view)

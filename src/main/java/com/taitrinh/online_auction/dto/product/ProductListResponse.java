@@ -84,4 +84,7 @@ public class ProductListResponse {
 
     @Schema(description = "Whether product is newly posted (within N minutes)", example = "true")
     private Boolean isNew;
+
+    @Schema(description = "Whether product is ended", example = "false")
+    private Boolean isEnded;
 }

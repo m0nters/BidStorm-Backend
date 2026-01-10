@@ -114,6 +114,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND p.isEnded = false")
         Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds, Pageable pageable);
 
+        // Find products by category or parent category with status filter
+        @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.images WHERE (p.category.id = :categoryId OR p.category.parent.id = :categoryId) AND p.isEnded = :isEnded")
+        Page<Product> findByCategoryIdOrParentIdAndIsEnded(@Param("categoryId") Integer categoryId,
+                        @Param("isEnded") Boolean isEnded, Pageable pageable);
+
         // Find products that ended between two timestamps (for cron job processing)
         @Query("SELECT p FROM Product p WHERE p.endTime > :startTime AND p.endTime <= :endTime AND p.isEnded = false")
         List<Product> findProductsEndingBetween(@Param("startTime") ZonedDateTime startTime,
@@ -142,6 +147,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
         // Check if a seller has created any products
         boolean existsBySeller_Id(Long sellerId);
+
+        // Find all active products (not ended)
+        Page<Product> findByIsEndedFalse(Pageable pageable);
+
+        // Find all ended products
+        Page<Product> findByIsEndedTrue(Pageable pageable);
 
         // === STATISTICS METHODS ===
 

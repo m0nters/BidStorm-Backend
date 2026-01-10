@@ -110,6 +110,8 @@ public class ProductController {
 
                         @Parameter(description = "Category ID to filter", example = "5") @RequestParam(required = false) Integer categoryId,
 
+                        @Parameter(description = "Product status filter: 'active' (Còn hạn), 'ended' (Đã kết thúc), 'all' (Tất cả)", example = "active") @RequestParam(defaultValue = "active") String status,
+
                         @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
 
                         @Parameter(description = "Page size", example = "20") @RequestParam(defaultValue = "20") @Min(1) Integer size,
@@ -121,6 +123,7 @@ public class ProductController {
                 ProductSearchRequest request = ProductSearchRequest.builder()
                                 .keyword(keyword)
                                 .categoryId(categoryId)
+                                .status(status)
                                 .page(page)
                                 .size(size)
                                 .sortBy(sortBy)

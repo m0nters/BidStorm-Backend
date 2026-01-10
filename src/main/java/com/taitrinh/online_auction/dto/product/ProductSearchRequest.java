@@ -21,6 +21,12 @@ public class ProductSearchRequest {
     @Schema(description = "Category ID to filter by", example = "5")
     private Integer categoryId;
 
+    @Schema(description = "Product status filter: 'active' (Còn hạn), 'ended' (Đã kết thúc), 'all' (Tất cả)", example = "active", allowableValues = {
+            "active", "ended", "all" })
+    @Pattern(regexp = "^(active|ended|all)$", message = "Invalid status filter. Must be: active, ended, or all")
+    @Builder.Default
+    private String status = "active";
+
     @Schema(description = "Page number (0-indexed)", example = "0")
     @Min(value = 0, message = "Page must be >= 0")
     @Builder.Default
