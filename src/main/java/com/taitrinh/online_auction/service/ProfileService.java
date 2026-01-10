@@ -26,6 +26,7 @@ import com.taitrinh.online_auction.dto.profile.SellerEndedProductResponse;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
+import com.taitrinh.online_auction.dto.profile.UserReviewsWithMetadataResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
 import com.taitrinh.online_auction.entity.BidHistory;
 import com.taitrinh.online_auction.entity.Favorite;
@@ -252,9 +253,11 @@ public class ProfileService {
      * - Anyone can view reviews of SELLERs (for reputation checking) and their own
      * reviews
      * - Only sellers can view reviews of BIDDERs who interacted with their products
+     * Returns metadata (positive/negative ratings, percentage) along with reviews
      */
     @Transactional(readOnly = true)
-    public Page<ReviewResponse> getUserReviewsWithAuthorization(Long viewerId, Long targetUserId, Pageable pageable) {
+    public UserReviewsWithMetadataResponse getUserReviewsWithAuthorization(Long viewerId, Long targetUserId,
+            Pageable pageable) {
         // Get both users
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
@@ -265,9 +268,11 @@ public class ProfileService {
         // Check if target user is a seller (role hierarchy: ADMIN > SELLER > BIDDER)
         boolean targetIsSeller = hasRole(targetUser, "SELLER");
 
+        Page<ReviewResponse> reviews;
+
         if (targetIsSeller || viewerId.equals(targetUserId)) {
             // Anyone can view seller reviews (for reputation checking before bidding)
-            return getUserReviews(targetUserId, pageable);
+            reviews = getUserReviews(targetUserId, pageable);
         } else {
             // Target is a bidder - only sellers who had the bidder interact with their
             // products can view
@@ -287,8 +292,11 @@ public class ProfileService {
             }
 
             // Authorized - return reviews
-            return getUserReviews(targetUserId, pageable);
+            reviews = getUserReviews(targetUserId, pageable);
         }
+
+        // Wrap with metadata
+        return UserReviewsWithMetadataResponse.from(targetUser, reviews);
     }
 
     /**

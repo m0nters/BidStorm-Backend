@@ -32,6 +32,7 @@ import com.taitrinh.online_auction.dto.profile.SubmitUpgradeRequestRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateProfileRequest;
 import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
+import com.taitrinh.online_auction.dto.profile.UserReviewsWithMetadataResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
 import com.taitrinh.online_auction.entity.UpgradeRequest;
 import com.taitrinh.online_auction.entity.User;
@@ -130,7 +131,8 @@ public class ProfileController {
         }
 
         @GetMapping("/reviews/user/{userId}")
-        @Operation(summary = "Get reviews of a specific user", description = "Get reviews received by a specific user with authorization. "
+        @Operation(summary = "Get reviews of a specific user with metadata", description = "Get reviews received by a specific user with authorization. "
+                        + "Returns metadata (positive/negative ratings, percentage) along with reviews. "
                         + "Anyone can view seller reviews (for reputation checking). "
                         + "Only sellers can view reviews of bidders who interacted with their products.")
         @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
@@ -139,16 +141,16 @@ public class ProfileController {
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found"),
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
         })
-        public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getUserReviewsWithAuthorization(
+        public ResponseEntity<ApiResponse<UserReviewsWithMetadataResponse>> getUserReviewsWithAuthorization(
                         @Parameter(description = "User ID whose reviews to view", example = "1") @PathVariable Long userId,
                         @AuthenticationPrincipal UserDetailsImpl userDetails,
                         @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
                         @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
-                Page<ReviewResponse> reviews = profileService.getUserReviewsWithAuthorization(
+                UserReviewsWithMetadataResponse response = profileService.getUserReviewsWithAuthorization(
                                 userDetails.getUserId(),
                                 userId,
                                 PageRequest.of(page, size));
-                return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã được lấy thành công"));
+                return ResponseEntity.ok(ApiResponse.ok(response, "Lấy danh sách đánh giá thành công"));
         }
 
         @PostMapping("/reviews")
