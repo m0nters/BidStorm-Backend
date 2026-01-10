@@ -129,6 +129,28 @@ public class ProfileController {
                 return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã gửi đã được lấy thành công"));
         }
 
+        @GetMapping("/reviews/user/{userId}")
+        @Operation(summary = "Get reviews of a specific user", description = "Get reviews received by a specific user with authorization. "
+                        + "Anyone can view seller reviews (for reputation checking). "
+                        + "Only sellers can view reviews of bidders who interacted with their products.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reviews retrieved successfully"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Not authorized to view these reviews"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found"),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getUserReviewsWithAuthorization(
+                        @Parameter(description = "User ID whose reviews to view", example = "1") @PathVariable Long userId,
+                        @AuthenticationPrincipal UserDetailsImpl userDetails,
+                        @Parameter(description = "Page number (0-indexed)", example = "0") @RequestParam(defaultValue = "0") @Min(0) Integer page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+                Page<ReviewResponse> reviews = profileService.getUserReviewsWithAuthorization(
+                                userDetails.getUserId(),
+                                userId,
+                                PageRequest.of(page, size));
+                return ResponseEntity.ok(ApiResponse.ok(reviews, "Danh sách đánh giá đã được lấy thành công"));
+        }
+
         @PostMapping("/reviews")
         @Operation(summary = "Create review", description = "Create a review for a seller or buyer after auction ends. Only winners can review sellers and sellers can review winners.")
         @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {

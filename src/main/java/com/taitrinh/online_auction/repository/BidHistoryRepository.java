@@ -74,4 +74,10 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
                         "GROUP BY u.id, u.fullName, u.email " +
                         "ORDER BY SUM(oc.amountCents) DESC, COUNT(oc.id) DESC")
         List<com.taitrinh.online_auction.dto.admin.LeaderboardEntryResponse> getTopSellers(Pageable pageable);
+
+        // Check if a bidder has bid on any products owned by a seller
+        @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
+                        "FROM BidHistory b " +
+                        "WHERE b.bidder.id = :bidderId AND b.product.seller.id = :sellerId")
+        boolean existsByBidderAndSeller(@Param("bidderId") Long bidderId, @Param("sellerId") Long sellerId);
 }

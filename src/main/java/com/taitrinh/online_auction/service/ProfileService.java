@@ -1,10 +1,15 @@
 package com.taitrinh.online_auction.service;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +38,7 @@ import com.taitrinh.online_auction.exception.BadRequestException;
 import com.taitrinh.online_auction.exception.EmailAlreadyExistsException;
 import com.taitrinh.online_auction.exception.ResourceNotFoundException;
 import com.taitrinh.online_auction.repository.BidHistoryRepository;
+import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.FavoriteRepository;
 import com.taitrinh.online_auction.repository.OrderCompletionRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
@@ -52,12 +58,30 @@ public class ProfileService {
     private final FavoriteRepository favoriteRepository;
     private final ProductRepository productRepository;
     private final BidHistoryRepository bidHistoryRepository;
+    private final CommentRepository commentRepository;
     private final OrderCompletionRepository orderCompletionRepository;
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
+    private final RoleHierarchy roleHierarchy;
 
     @Value("${app.default-avatar-url}")
     private String defaultAvatarUrl;
+
+    /**
+     * Helper method to check if a user has a specific role (considering role
+     * hierarchy)
+     * Thanks to role hierarchy: ADMIN > SELLER > BIDDER
+     */
+    private boolean hasRole(User user, String role) {
+        String userRole = "ROLE_" + user.getRole().getName().toUpperCase();
+        Collection<? extends GrantedAuthority> reachableRoles = roleHierarchy
+                .getReachableGrantedAuthorities(
+                        Collections.singletonList(new SimpleGrantedAuthority(userRole)));
+
+        String targetRole = "ROLE_" + role.toUpperCase();
+        return reachableRoles.stream()
+                .anyMatch(auth -> auth.getAuthority().equals(targetRole));
+    }
 
     /**
      * Get user profile with rating information
@@ -219,6 +243,49 @@ public class ProfileService {
                     .createdAt(review.getCreatedAt())
                     .build();
         });
+    }
+
+    /**
+     * Get reviews for a specific user with authorization
+     * - Anyone can view reviews of SELLERs (for reputation checking)
+     * - Only sellers can view reviews of BIDDERs who interacted with their products
+     */
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> getUserReviewsWithAuthorization(Long viewerId, Long targetUserId, Pageable pageable) {
+        // Get both users
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
+
+        User viewer = userRepository.findById(viewerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", viewerId));
+
+        // Check if target user is a seller (role hierarchy: ADMIN > SELLER > BIDDER)
+        boolean targetIsSeller = hasRole(targetUser, "SELLER");
+
+        if (targetIsSeller) {
+            // Anyone can view seller reviews (for reputation checking before bidding)
+            return getUserReviews(targetUserId, pageable);
+        } else {
+            // Target is a bidder - only sellers who had the bidder interact with their
+            // products can view
+            boolean viewerIsSeller = hasRole(viewer, "SELLER");
+
+            if (!viewerIsSeller) {
+                throw new BadRequestException("Bạn không có quyền xem đánh giá của người dùng này");
+            }
+
+            // Check if target user has bid or commented on any of viewer's products
+            boolean hasBid = bidHistoryRepository.existsByBidderAndSeller(targetUserId, viewerId);
+            boolean hasComment = commentRepository.existsByUserAndSeller(targetUserId, viewerId);
+
+            if (!hasBid && !hasComment) {
+                throw new BadRequestException(
+                        "Bạn không có quyền xem đánh giá của người dùng này. Người dùng này hiện chưa tương tác với sản phẩm của bạn");
+            }
+
+            // Authorized - return reviews
+            return getUserReviews(targetUserId, pageable);
+        }
     }
 
     /**

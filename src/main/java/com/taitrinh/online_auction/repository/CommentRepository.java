@@ -45,4 +45,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT DISTINCT c.user FROM Comment c WHERE c.product.id = :productId AND c.parent IS NULL")
     List<User> findDistinctQuestionAskersByProductId(
             @Param("productId") Long productId);
+
+    /**
+     * Check if a user has commented on any products owned by a seller
+     */
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END " +
+            "FROM Comment c " +
+            "WHERE c.user.id = :userId AND c.product.seller.id = :sellerId")
+    boolean existsByUserAndSeller(@Param("userId") Long userId, @Param("sellerId") Long sellerId);
 }
