@@ -48,6 +48,7 @@ public abstract class ProductMapper {
     @Mapping(target = "parentCategoryName", source = "product.category.parent.name")
     @Mapping(target = "parentCategorySlug", source = "product.category.parent.slug")
     @Mapping(target = "seller", source = "product.seller", qualifiedByName = "mapUserBasicInfo")
+    @Mapping(target = "highestBidderId", ignore = true)
     @Mapping(target = "highestBidderName", source = "product.highestBidder", qualifiedByName = "maskUserName")
     @Mapping(target = "highestBidderRating", source = "product.highestBidder", qualifiedByName = "getRatingPercentage")
     @Mapping(target = "winnerName", source = "product.winner", qualifiedByName = "maskUserName")
@@ -109,15 +110,16 @@ public abstract class ProductMapper {
         }
 
         // Unmask highest bidder name if seller viewing OR if viewer is the highest
-        // bidder themselves
+        // bidder themselves, also determine if viewer should see highestBidderId
+        // Only admin or the highest bidder themselves can see it
         if (product.getHighestBidder() != null) {
             boolean isHighestBidder = viewerId != null && viewerId.equals(product.getHighestBidder().getId());
             if (isSeller || isHighestBidder) {
                 response.setHighestBidderName(product.getHighestBidder().getFullName());
+                response.setHighestBidderId(product.getHighestBidder().getId());
             }
         }
 
-        // Unmask winner name if seller viewing OR if viewer is the winner themselves
         if (product.getWinner() != null) {
             boolean isWinner = viewerId != null && viewerId.equals(product.getWinner().getId());
             if (isSeller || isWinner) {

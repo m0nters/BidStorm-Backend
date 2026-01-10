@@ -78,6 +78,9 @@ public class ProductDetailResponse {
     @Schema(description = "Highest bidder rating percentage", example = "90.0")
     private Double highestBidderRating;
 
+    @Schema(description = "Highest bidder ID (only visible to admin or the highest bidder himself). This will be used for winner ID too. The reason of this field is for frontend to call API to get highest bidder/winner detailed reviews list", example = "15")
+    private Long highestBidderId;
+
     @Schema(description = "Winner name (masked)", example = "****John")
     private String winnerName;
 
