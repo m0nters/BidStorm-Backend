@@ -37,9 +37,12 @@ import com.taitrinh.online_auction.exception.UnauthorizedSellerException;
 import com.taitrinh.online_auction.mapper.ProductMapper;
 import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CategoryRepository;
+import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.DescriptionLogRepository;
+import com.taitrinh.online_auction.repository.FavoriteRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.service.email.ProductEmailService;
 import com.taitrinh.online_auction.util.SlugUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -55,9 +58,12 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final DescriptionLogRepository descriptionLogRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final CommentRepository commentRepository;
     private final ProductMapper productMapper;
     private final ApplicationContext applicationContext;
     private final S3Service s3Service;
+    private final ProductEmailService productEmailService;
 
     /**
      * Get top 5 products ending soon
@@ -455,6 +461,50 @@ public class ProductService {
         productRepository.save(product);
 
         log.info("Product description updated for product: {}", productId);
+
+        // Send email notifications to all involved users
+        notifyUsersAboutDescriptionUpdate(product);
+    }
+
+    /**
+     * Send email notifications to users who are involved with the product
+     * Includes: bidders, commenters
+     */
+    private void notifyUsersAboutDescriptionUpdate(Product product) {
+        try {
+            // Get all distinct users who need to be notified
+            List<User> interestedUsers = new java.util.ArrayList<>();
+
+            // 1. Get all bidders
+            List<User> bidders = bidHistoryRepository.findDistinctBiddersByProductId(product.getId());
+            interestedUsers.addAll(bidders);
+
+            // 2. Get all commenters (question askers)
+            List<User> commenters = commentRepository.findDistinctQuestionAskersByProductId(product.getId());
+            interestedUsers.addAll(commenters);
+
+            // Remove duplicates and exclude the seller
+            List<User> uniqueUsers = interestedUsers.stream()
+                    .distinct()
+                    .filter(user -> !user.getId().equals(product.getSeller().getId()))
+                    .toList();
+
+            // Send email to each interested user
+            log.info("Sending description update notifications to {} users for product: {}",
+                    uniqueUsers.size(), product.getId());
+
+            for (User user : uniqueUsers) {
+                productEmailService.sendDescriptionUpdateNotification(
+                        user.getEmail(),
+                        user.getFullName(),
+                        product.getTitle(),
+                        product.getSlug());
+            }
+
+        } catch (Exception e) {
+            // Log error but don't fail the update operation
+            log.error("Error sending description update notifications for product: {}", product.getId(), e);
+        }
     }
 
     /**

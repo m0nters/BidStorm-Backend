@@ -182,4 +182,53 @@ public class ProductEmailService {
 
         return templateService.buildEmail("Sản phẩm đã bán - BidStorm", content);
     }
+
+    /**
+     * Send notification to users when product description is updated
+     * Notifies bidders, commenters, and users who favorited the product
+     */
+    @Async
+    public void sendDescriptionUpdateNotification(String toEmail, String userName, String productTitle,
+            String productSlug) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(
+                    String.format("%s - Cập nhật mô tả sản phẩm: %s", templateService.getAppName(), productTitle));
+            helper.setText(buildDescriptionUpdateEmailContent(userName, productTitle, productSlug), true);
+
+            mailSender.send(message);
+            log.info("Description update notification sent to: {}", toEmail);
+        } catch (MessagingException | MailException e) {
+            log.error("Failed to send description update notification to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildDescriptionUpdateEmailContent(String userName, String productTitle, String productSlug) {
+        String productUrl = templateService.buildProductUrl(productSlug);
+
+        String content = String.format(
+                """
+                        <p class="greeting">Xin chào %s,</p>
+
+                        <div class="info-box">
+                            <strong>📝 Sản phẩm bạn quan tâm đã được cập nhật mô tả</strong>
+                        </div>
+
+                        <div class="product-details">
+                            <p><strong>Sản phẩm:</strong> %s</p>
+                        </div>
+
+                        <p class="message">Người bán đã thêm thông tin mới vào mô tả sản phẩm. Vui lòng kiểm tra để biết thêm chi tiết trước khi đấu giá.</p>
+
+                        %s
+                        """,
+                userName, productTitle,
+                templateService.buildButton("Xem cập nhật", productUrl));
+
+        return templateService.buildEmail("Cập nhật sản phẩm - BidStorm", content);
+    }
 }

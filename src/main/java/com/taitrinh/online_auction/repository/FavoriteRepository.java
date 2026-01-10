@@ -32,6 +32,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
     // Find specific favorite
     Optional<Favorite> findByUser_IdAndProduct_Id(Long userId, Long productId);
 
+    // Find all favorites for a product
+    List<Favorite> findByProduct_Id(Long productId);
+
     // Delete favorite by user and product
     void deleteByUser_IdAndProduct_Id(Long userId, Long productId);
 
