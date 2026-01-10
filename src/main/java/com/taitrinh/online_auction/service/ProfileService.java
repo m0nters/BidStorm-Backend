@@ -247,7 +247,8 @@ public class ProfileService {
 
     /**
      * Get reviews for a specific user with authorization
-     * - Anyone can view reviews of SELLERs (for reputation checking)
+     * - Anyone can view reviews of SELLERs (for reputation checking) and their own
+     * reviews
      * - Only sellers can view reviews of BIDDERs who interacted with their products
      */
     @Transactional(readOnly = true)
@@ -262,7 +263,7 @@ public class ProfileService {
         // Check if target user is a seller (role hierarchy: ADMIN > SELLER > BIDDER)
         boolean targetIsSeller = hasRole(targetUser, "SELLER");
 
-        if (targetIsSeller) {
+        if (targetIsSeller || viewerId.equals(targetUserId)) {
             // Anyone can view seller reviews (for reputation checking before bidding)
             return getUserReviews(targetUserId, pageable);
         } else {
