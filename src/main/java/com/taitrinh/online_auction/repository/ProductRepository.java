@@ -140,6 +140,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                         @Param("startTime") java.time.ZonedDateTime startTime,
                         @Param("endTime") java.time.ZonedDateTime endTime);
 
+        // Check if a seller has created any products
+        boolean existsBySeller_Id(Long sellerId);
+
         // === STATISTICS METHODS ===
 
         // Count products created after a timestamp

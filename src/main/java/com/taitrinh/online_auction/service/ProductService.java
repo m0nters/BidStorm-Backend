@@ -346,6 +346,17 @@ public class ProductService {
             throw new UnauthorizedSellerException("Người dùng không có quyền bán");
         }
 
+        // Validate product end time doesn't exceed seller expiration
+        // if seller expires at is null, it means seller has no expiration (only happens
+        // when manually edit the database, only the admins or the devs have this
+        // privilege)
+        if (seller.getSellerExpiresAt() != null &&
+                request.getEndTime().isAfter(seller.getSellerExpiresAt())) {
+            throw new BadRequestException(
+                    "Thời gian kết thúc sản phẩm không được vượt quá thời hạn quyền bán của bạn (" +
+                            seller.getSellerExpiresAt() + ")");
+        }
+
         // Validate category exists
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", request.getCategoryId()));
@@ -523,6 +534,14 @@ public class ProductService {
         // Validate seller has permission to sell
         if (!seller.isSeller()) {
             throw new UnauthorizedSellerException("Người dùng không có quyền bán");
+        }
+
+        // Validate product end time doesn't exceed seller expiration
+        if (seller.getSellerExpiresAt() != null &&
+                request.getEndTime().isAfter(seller.getSellerExpiresAt())) {
+            throw new BadRequestException(
+                    "Thời gian kết thúc sản phẩm không được vượt quá thời hạn quyền bán của bạn (" +
+                            seller.getSellerExpiresAt() + ")");
         }
 
         // Validate category exists

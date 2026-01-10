@@ -105,7 +105,9 @@ public class ProfileService {
                 .totalRatings(user.getPositiveRating() + user.getNegativeRating())
                 .emailVerified(user.getEmailVerified())
                 .isActive(user.getIsActive())
+                .hasProductSell(productRepository.existsBySeller_Id(userId))
                 .createdAt(user.getCreatedAt())
+                .sellerExpiresAt(user.getSellerExpiresAt())
                 .build();
     }
 

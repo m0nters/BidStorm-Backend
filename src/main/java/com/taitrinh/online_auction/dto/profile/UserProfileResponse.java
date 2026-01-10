@@ -55,6 +55,12 @@ public class UserProfileResponse {
     @Schema(description = "Whether account is active", example = "true")
     private Boolean isActive;
 
+    @Schema(description = "Whether user has created any products as a seller", example = "true")
+    private Boolean hasProductSell;
+
     @Schema(description = "Account creation date")
     private ZonedDateTime createdAt;
+
+    @Schema(description = "Seller expires at")
+    private ZonedDateTime sellerExpiresAt;
 }
