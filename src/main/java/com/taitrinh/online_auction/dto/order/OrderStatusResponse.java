@@ -17,7 +17,9 @@ public class OrderStatusResponse {
     private Long productId;
     private String productTitle;
     private Long winnerId;
+    private String winnerName;
     private Long sellerId;
+    private String sellerName;
     private String status;
     private String shippingAddress;
     private String shippingPhone;

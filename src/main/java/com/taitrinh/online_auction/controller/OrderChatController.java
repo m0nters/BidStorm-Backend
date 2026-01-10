@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -22,6 +21,7 @@ import com.taitrinh.online_auction.security.UserDetailsImpl;
 import com.taitrinh.online_auction.service.OrderChatService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Order Chat", description = "APIs for chat between seller and winner after auction ends")
+@SecurityRequirement(name = "Bearer Authentication")
+
 public class OrderChatController {
 
     private final OrderChatService orderChatService;
@@ -42,7 +44,6 @@ public class OrderChatController {
      * Only seller and winner can access
      */
     @GetMapping("/{productId}/chat")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get chat history", description = "Get all chat messages between seller and winner for a product")
     public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getChatHistory(
             @PathVariable Long productId,

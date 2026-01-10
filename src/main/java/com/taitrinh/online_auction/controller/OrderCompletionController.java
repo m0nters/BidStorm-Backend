@@ -1,7 +1,6 @@
 package com.taitrinh.online_auction.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +18,7 @@ import com.taitrinh.online_auction.security.UserDetailsImpl;
 import com.taitrinh.online_auction.service.OrderCompletionService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Order Completion", description = "APIs for order management and payment flow")
+@SecurityRequirement(name = "Bearer Authentication")
 public class OrderCompletionController {
 
     private final OrderCompletionService orderCompletionService;
 
     @PostMapping("/{productId}/create")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create order", description = "Create order for a product after auction ends (seller or winner can create)")
     public ResponseEntity<ApiResponse<OrderStatusResponse>> createOrder(
             @PathVariable Long productId,
@@ -46,7 +46,6 @@ public class OrderCompletionController {
     }
 
     @GetMapping("/{orderId}")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get order status", description = "Get current order details and status")
     public ResponseEntity<ApiResponse<OrderStatusResponse>> getOrderStatus(
             @PathVariable Long orderId,
@@ -58,7 +57,6 @@ public class OrderCompletionController {
     }
 
     @PostMapping("/{orderId}/payment")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Initiate payment", description = "Create Stripe PaymentIntent for buyer to pay")
     public ResponseEntity<ApiResponse<PaymentIntentResponse>> initiatePayment(
             @PathVariable Long orderId,
@@ -75,7 +73,6 @@ public class OrderCompletionController {
     }
 
     @PostMapping("/{orderId}/ship")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Mark as shipped", description = "Seller confirms product has been shipped")
     public ResponseEntity<ApiResponse<OrderStatusResponse>> markAsShipped(
             @PathVariable Long orderId,
@@ -91,7 +88,6 @@ public class OrderCompletionController {
     }
 
     @PostMapping("/{orderId}/confirm")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Confirm receipt", description = "Buyer confirms received product")
     public ResponseEntity<ApiResponse<OrderStatusResponse>> confirmReceipt(
             @PathVariable Long orderId,
@@ -103,7 +99,6 @@ public class OrderCompletionController {
     }
 
     @PostMapping("/{orderId}/cancel")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel order", description = "Seller cancels order (only before payment)")
     public ResponseEntity<ApiResponse<OrderStatusResponse>> cancelOrder(
             @PathVariable Long orderId,
