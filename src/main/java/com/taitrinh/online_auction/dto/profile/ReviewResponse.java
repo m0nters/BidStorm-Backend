@@ -34,9 +34,9 @@ public class ReviewResponse {
     @Schema(description = "Product thumbnail URL (first image)", example = "https://example.com/image.jpg")
     private String thumbnailUrl;
 
-    @JsonProperty("isYourProduct")
-    @Schema(description = "Is this your product?")
-    private boolean isYourProduct;
+    @JsonProperty("isUserProduct")
+    @Schema(description = "Is this the user's product?")
+    private boolean isUserProduct;
 
     @Schema(description = "Reviewer ID", example = "2")
     private Long reviewerId;
