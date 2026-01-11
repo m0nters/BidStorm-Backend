@@ -45,24 +45,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // Full-text search using PostgreSQL tsvector (supports Vietnamese without
         // diacritics)
         @Query(value = "SELECT p.* FROM products p " +
-                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                        "AND p.is_ended = false", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
-                                        +
-                                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                                        "AND p.is_ended = false")
+                        "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword))", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword))")
         Page<Product> searchByTitle(@Param("keyword") String keyword, Pageable pageable);
 
         // Full-text search by title and category using PostgreSQL tsvector
         @Query(value = "SELECT p.* FROM products p " +
                         "INNER JOIN categories c ON p.category_id = c.id " +
                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                        "AND p.is_ended = false", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p "
+                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId)", nativeQuery = true, countQuery = "SELECT COUNT(*) FROM products p INNER JOIN categories c ON p.category_id = c.id "
                                         +
-                                        "INNER JOIN categories c ON p.category_id = c.id " +
                                         "WHERE p.search_vector @@ plainto_tsquery('simple', unaccent(:keyword)) " +
-                                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId) " +
-                                        "AND p.is_ended = false")
+                                        "AND (p.category_id = :categoryId OR c.parent_id = :categoryId)")
         Page<Product> searchByTitleAndCategory(@Param("keyword") String keyword,
                         @Param("categoryId") Integer categoryId,
                         Pageable pageable);
