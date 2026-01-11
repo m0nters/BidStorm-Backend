@@ -675,19 +675,20 @@ public class ProfileService {
      */
     @Transactional(readOnly = true)
     public Page<BiddingProductResponse> getBiddingProducts(Long userId, Pageable pageable) {
-        Page<BidHistory> bidHistories = bidHistoryRepository.findByBidder_IdAndProduct_IsEndedFalse(userId,
+        // Get distinct products the user is bidding on (not duplicates)
+        Page<Product> products = bidHistoryRepository.findDistinctProductsByBidder_IdAndProduct_IsEndedFalse(userId,
                 pageable);
 
-        return bidHistories.map(bidHistory -> {
-            Product product = bidHistory.getProduct();
+        return products.map(product -> {
             String thumbnailUrl = product.getImages().isEmpty() ? null
                     : product.getImages().get(0).getUrl();
 
             // Get user's highest bid for this product
-            var userHighestBid = bidHistoryRepository.findTopByProductIdAndBidderIdOrderByMaxBidAmountDesc(
-                    product.getId(), userId)
+            var userHighestBid = bidHistoryRepository
+                    .findFirstByProduct_IdAndBidder_IdOrderByMaxBidAmountDescCreatedAtAsc(
+                            product.getId(), userId)
                     .map(BidHistory::getMaxBidAmount)
-                    .orElse(bidHistory.getMaxBidAmount());
+                    .orElse(product.getCurrentPrice());
 
             boolean isWinning = product.getHighestBidder() != null
                     && product.getHighestBidder().getId().equals(userId);

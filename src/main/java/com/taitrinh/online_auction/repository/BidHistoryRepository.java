@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.taitrinh.online_auction.entity.BidHistory;
+import com.taitrinh.online_auction.entity.Product;
 import com.taitrinh.online_auction.entity.User;
 
 @Repository
@@ -20,11 +21,14 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
         @Query("SELECT b FROM BidHistory b WHERE b.product.id = :productId ORDER BY b.createdAt DESC")
         List<BidHistory> findByProductIdOrderByCreatedAtDesc(@Param("productId") Long productId);
 
-        // Find bid history for a bidder where product is not ended
-        @Query("SELECT b FROM BidHistory b " +
+        // Find unique products that a bidder is bidding on (not ended)
+        // Uses GROUP BY instead of DISTINCT to allow ORDER BY MAX(createdAt)
+        @Query("SELECT b.product FROM BidHistory b " +
                         "WHERE b.bidder.id = :bidderId AND b.product.isEnded = false " +
-                        "ORDER BY b.createdAt DESC")
-        Page<BidHistory> findByBidder_IdAndProduct_IsEndedFalse(@Param("bidderId") Long bidderId, Pageable pageable);
+                        "GROUP BY b.product " +
+                        "ORDER BY MAX(b.createdAt) DESC")
+        Page<Product> findDistinctProductsByBidder_IdAndProduct_IsEndedFalse(@Param("bidderId") Long bidderId,
+                        Pageable pageable);
 
         // Get current highest max bid for a product (for automatic bidding logic)
         Optional<BidHistory> findFirstByProductIdOrderByMaxBidAmountDescCreatedAtAsc(
@@ -39,12 +43,9 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
                         @Param("bidderId") Long bidderId);
 
         // Find user's highest max bid for a specific product
-        @Query("SELECT b FROM BidHistory b " +
-                        "WHERE b.product.id = :productId AND b.bidder.id = :bidderId " +
-                        "ORDER BY b.maxBidAmount DESC, b.createdAt ASC")
-        Optional<BidHistory> findTopByProductIdAndBidderIdOrderByMaxBidAmountDesc(
-                        @Param("productId") Long productId,
-                        @Param("bidderId") Long bidderId);
+        Optional<BidHistory> findFirstByProduct_IdAndBidder_IdOrderByMaxBidAmountDescCreatedAtAsc(
+                        Long productId,
+                        Long bidderId);
 
         // Get all distinct bidders who have bid on a product (for email notifications)
         @Query("SELECT DISTINCT b.bidder FROM BidHistory b WHERE b.product.id = :productId")
