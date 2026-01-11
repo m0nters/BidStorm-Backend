@@ -40,3 +40,9 @@ build/
 
 ### Stripe
 stripe.exe
+
+### ELK Stack ###
+elk/elasticsearch/data/
+elk/logstash/data/
+elk/filebeat/data/
+logs/

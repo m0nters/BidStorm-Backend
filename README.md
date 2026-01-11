@@ -66,9 +66,18 @@ BidStorm is a feature-rich online auction platform that allows users to buy and 
 ### API Documentation
 - **SpringDoc OpenAPI 3** - Auto-generated Swagger documentation available at `/swagger-ui.html`
 
+### Logging & Monitoring
+- **ELK Stack** - Centralized logging and analysis
+  - **Elasticsearch 8.11.3** - Log storage and indexing
+  - **Logstash 8.11.3** - Log collection and parsing
+  - **Kibana 8.11.3** - Log visualization and search UI
+  - **Filebeat 8.11.3** - Log shipping from application to Logstash
+- **Logback with Logstash Encoder** - Structured JSON logging
+
 ### Build & Development
 - **Maven** - Dependency management and build automation
 - **Git** - Version control
+- **Docker Compose** - Container orchestration for ELK stack
 
 ---
 
@@ -958,7 +967,99 @@ Automated tasks for auction end processing.
 
 ## 📊 Monitoring & Logging
 
-### Logging Levels
+### ELK Stack Integration
+
+The application integrates with a complete **ELK (Elasticsearch, Logstash, Kibana) stack** for centralized logging and analysis. This provides powerful log aggregation, search, and visualization capabilities.
+
+#### Architecture
+
+```
+Spring Boot Application (Logback)
+        ↓ (writes JSON logs)
+    app.log file
+        ↓ (monitored by)
+    Filebeat
+        ↓ (ships to)
+    Logstash
+        ↓ (parses and indexes)
+  Elasticsearch
+        ↓ (visualized in)
+     Kibana
+```
+
+#### Components
+
+**Elasticsearch 8.11.3**
+- Stores and indexes all application logs
+- Fast full-text search across millions of log entries
+- Available at: `http://localhost:9200`
+
+**Logstash 8.11.3**
+- Collects logs from Filebeat
+- Parses JSON log format
+- Enriches logs with application metadata
+- Sends to Elasticsearch
+
+**Kibana 8.11.3**
+- Web-based UI for log visualization
+- Interactive log search and filtering
+- Dashboard creation for monitoring
+- Available at: `http://localhost:5601`
+
+**Filebeat 8.11.3**
+- Lightweight log shipper
+- Monitors `app.log` file for changes
+- Handles multiline stack traces
+- Ships logs to Logstash
+
+#### Quick Start
+
+1. **Start ELK Stack:**
+   ```bash
+   docker-compose -f docker-compose.elk.yml up -d
+   ```
+
+2. **Access Kibana:**
+   - Navigate to `http://localhost:5601`
+   - Create index pattern: `logstash-online-auction-*`
+   - View logs in Discover tab
+
+3. **Stop ELK Stack:**
+   ```bash
+   docker-compose -f docker-compose.elk.yml down
+   ```
+
+For detailed setup instructions, troubleshooting, and usage guide, see [ELK_SETUP.md](ELK_SETUP.md).
+
+### Structured Logging
+
+The application uses **Logback with Logstash encoder** to output structured JSON logs:
+
+```json
+{
+  "@timestamp": "2026-01-11T18:42:00.123+07:00",
+  "level": "INFO",
+  "logger_name": "com.taitrinh.online_auction.service.ProductService",
+  "thread_name": "http-nio-8080-exec-1",
+  "message": "Creating new product",
+  "application": "online-auction",
+  "environment": "development"
+}
+```
+
+#### Available Log Fields
+- `@timestamp` - ISO 8601 timestamp
+- `level` - Log level (DEBUG, INFO, WARN, ERROR)
+- `logger_name` - Fully qualified class name
+- `thread_name` - Thread executing the code
+- `message` - Log message
+- `stack_trace` - Stack trace (for exceptions)
+- `application` - Application name
+- `environment` - Environment (development/production)
+
+### Logging Configuration
+
+#### Logging Levels
 ```yaml
 logging:
   level:
@@ -967,14 +1068,49 @@ logging:
     org.springframework.web.socket: DEBUG
 ```
 
-### Log Files
-- Application logs: `app.log` (if configured)
-- Spring Boot default console logging
+#### Log Files
+- **app.log** - JSON formatted logs for ELK ingestion
+- **logs/archived/** - Rolled over logs (daily rotation, 30 days retention)
 
-### Recommended Production Setup
-- **ELK Stack** (Elasticsearch, Logstash, Kibana) for log aggregation
-- **Grafana** for metrics visualization
-- **Prometheus** for metrics collection
+#### Logback Configuration
+See `src/main/resources/logback-spring.xml` for detailed configuration including:
+- Console appender (human-readable for development)
+- File appender (JSON format for ELK)
+- Rolling policy (daily rotation, 30-day retention, 10GB max)
+
+### Monitoring in Kibana
+
+#### Useful Searches
+
+Search for errors:
+```
+log_level: "ERROR"
+```
+
+Search by service class:
+```
+logger: "com.taitrinh.online_auction.service.ProductService"
+```
+
+Find exceptions:
+```
+log_message: "exception" OR stack_trace: *
+```
+
+Search within time range:
+```
+@timestamp: [now-1h TO now] AND log_level: "ERROR"
+```
+
+#### Creating Dashboards
+
+1. Navigate to **Analytics** → **Visualize Library**
+2. Create visualizations:
+   - Error rate over time (Line chart)
+   - Log levels distribution (Pie chart)
+   - Top errors (Data table)
+   - Request volume (Metric)
+3. Add to **Dashboard** for comprehensive monitoring
 
 ---
 

@@ -1,0 +1,36 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/app/app.log
+    
+    # Parse multiline stack traces
+    multiline.type: pattern
+    multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+    multiline.negate: true
+    multiline.match: after
+    
+    # Add metadata
+    fields:
+      application: online-auction
+      environment: development
+    fields_under_root: true
+
+# Output to Logstash
+output.logstash:
+  hosts: ["logstash:5044"]
+  
+# Logging configuration
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# Processors to enrich data
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_docker_metadata: ~
