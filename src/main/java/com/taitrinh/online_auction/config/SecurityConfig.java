@@ -45,6 +45,44 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
+    private static class SecurityEndpoints {
+        // Swagger/OpenAPI documentation
+        static final String[] SWAGGER = {
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-ui.html"
+        };
+
+        // Public endpoints - no authentication required
+        static final String[] PUBLIC = {
+                "/api/v1/auth/**",
+                "/ws/**",
+                "/api/v1/webhooks/stripe"
+        };
+
+        // Public read-only endpoints (GET only)
+        static final String[] PUBLIC_READ_ONLY = {
+                "/api/v1/products/**",
+                "/api/v1/categories/**",
+                "/api/v1/comments/**",
+                "/api/v1/config/**",
+                "/api/v1/roles/**"
+        };
+
+        // Authenticated user endpoints (must be ordered before seller-only product
+        // patterns)
+        static final String BID_CREATE = "/api/v1/products/*/bids";
+        static final String BUY_NOW = "/api/v1/products/*/buy-now";
+        static final String BIDDER_DELETE = "/api/v1/products/*/bidders/*";
+        static final String PROFILE = "/api/v1/profile/**";
+
+        // Seller-only product endpoints
+        static final String PRODUCTS_API = "/api/v1/products/**";
+
+        // Admin endpoints
+        static final String ADMIN = "/api/v1/admin/**";
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -52,38 +90,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // Swagger/OpenAPI endpoints
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(SecurityEndpoints.SWAGGER).permitAll()
 
-                        // Public authentication endpoints
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
+                        // Public endpoints
+                        .requestMatchers(SecurityEndpoints.PUBLIC).permitAll()
 
-                        // Stripe webhooks (Stripe calls this, not authenticated users)
-                        .requestMatchers("/api/v1/webhooks/stripe").permitAll()
+                        // Public read-only endpoints (GET only)
+                        .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_READ_ONLY).permitAll()
 
-                        // Public product browsing endpoints (GET only)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/config/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/roles/**").permitAll()
-
-                        // Bid endpoints - authenticated users can bid (must be before /products/**
-                        // seller rules)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/*/bids").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/*/buy-now").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/*/bidders/*").authenticated()
-
-                        // Profile endpoints - require authentication
-                        .requestMatchers("/api/v1/profile/**").authenticated()
+                        // Authenticated user endpoints (must be before seller-only product rules)
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.BID_CREATE).authenticated()
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.BUY_NOW).authenticated()
+                        .requestMatchers(HttpMethod.DELETE, SecurityEndpoints.BIDDER_DELETE).authenticated()
+                        .requestMatchers(SecurityEndpoints.PROFILE).authenticated()
 
                         // Seller endpoints - require SELLER role
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole("SELLER")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasRole("SELLER")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.PRODUCTS_API).hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PUT, SecurityEndpoints.PRODUCTS_API).hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PATCH, SecurityEndpoints.PRODUCTS_API).hasRole("SELLER")
 
                         // Admin endpoints
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers(SecurityEndpoints.ADMIN).hasRole("ADMIN")
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated())

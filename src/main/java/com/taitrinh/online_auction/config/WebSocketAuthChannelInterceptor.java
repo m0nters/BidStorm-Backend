@@ -49,7 +49,7 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                     }
 
                     try {
-                        if (jwtUtil.validateToken(token)) {
+                        if (jwtUtil.validateAccessToken(token)) {
                             String username = jwtUtil.extractUsername(token);
                             UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService
                                     .loadUserByUsername(username);

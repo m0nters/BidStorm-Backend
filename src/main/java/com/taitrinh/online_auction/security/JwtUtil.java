@@ -48,6 +48,11 @@ public class JwtUtil {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
+    // Extract token type (access or refresh)
+    public String extractTokenType(String token) {
+        return extractClaim(token, claims -> claims.get("tokenType", String.class));
+    }
+
     // Extract expiration date
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
@@ -78,6 +83,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("role", role);
+        claims.put("tokenType", "access");
         return createToken(claims, userDetails.getUsername(), accessTokenExpiration);
     }
 
@@ -85,7 +91,7 @@ public class JwtUtil {
     public String generateRefreshToken(UserDetails userDetails, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
-        claims.put("type", "refresh");
+        claims.put("tokenType", "refresh");
         return createToken(claims, userDetails.getUsername(), refreshTokenExpiration);
     }
 
@@ -100,16 +106,28 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Validate token
-    public Boolean validateToken(String token, UserDetails userDetails) {
+    // Validate access token (for authentication)
+    public Boolean validateAccessToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String tokenType = extractTokenType(token);
+        return ("access".equals(tokenType) && username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    // Validate token without UserDetails
-    public Boolean validateToken(String token) {
+    // Validate access token without UserDetails (for WebSocket)
+    public Boolean validateAccessToken(String token) {
         try {
-            return !isTokenExpired(token);
+            final String tokenType = extractTokenType(token);
+            return "access".equals(tokenType) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Validate refresh token (for token refresh endpoint)
+    public Boolean validateRefreshToken(String token) {
+        try {
+            final String tokenType = extractTokenType(token);
+            return "refresh".equals(tokenType) && !isTokenExpired(token);
         } catch (Exception e) {
             return false;
         }

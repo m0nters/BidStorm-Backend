@@ -198,7 +198,7 @@ public class AuthService {
     @Transactional
     public LoginResponse refreshToken(String refreshToken) {
         // Validate refresh token format
-        if (!jwtUtil.validateToken(refreshToken)) {
+        if (!jwtUtil.validateRefreshToken(refreshToken)) {
             throw new InvalidRefreshTokenException();
         }
 
