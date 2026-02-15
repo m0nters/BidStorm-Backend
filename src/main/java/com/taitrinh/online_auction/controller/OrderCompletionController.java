@@ -15,7 +15,7 @@ import com.taitrinh.online_auction.dto.order.InitiatePaymentRequest;
 import com.taitrinh.online_auction.dto.order.OrderStatusResponse;
 import com.taitrinh.online_auction.dto.order.PaymentIntentResponse;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.OrderCompletionService;
+import com.taitrinh.online_auction.service.order.OrderCompletionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

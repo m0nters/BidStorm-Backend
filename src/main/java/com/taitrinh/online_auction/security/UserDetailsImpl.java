@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.entity.auth.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

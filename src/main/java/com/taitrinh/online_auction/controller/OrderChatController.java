@@ -18,7 +18,7 @@ import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.order.ChatMessageRequest;
 import com.taitrinh.online_auction.dto.order.ChatMessageResponse;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.OrderChatService;
+import com.taitrinh.online_auction.service.order.OrderChatService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

@@ -33,7 +33,7 @@ import com.taitrinh.online_auction.dto.product.ProductListResponse;
 import com.taitrinh.online_auction.dto.product.ProductSearchRequest;
 import com.taitrinh.online_auction.dto.product.UpdateProductDescriptionRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.ProductService;
+import com.taitrinh.online_auction.service.product.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

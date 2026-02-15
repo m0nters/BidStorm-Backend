@@ -2,9 +2,9 @@ package com.taitrinh.online_auction.service;
 
 import org.springframework.stereotype.Service;
 
-import com.taitrinh.online_auction.entity.SystemConfig;
-import com.taitrinh.online_auction.exception.ResourceNotFoundException;
-import com.taitrinh.online_auction.repository.SystemConfigRepository;
+import com.taitrinh.online_auction.entity.admin.SystemConfig;
+import com.taitrinh.online_auction.exception.common.ResourceNotFoundException;
+import com.taitrinh.online_auction.repository.admin.SystemConfigRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.taitrinh.online_auction.entity.Product;
-import com.taitrinh.online_auction.repository.ProductRepository;
+import com.taitrinh.online_auction.entity.product.Product;
+import com.taitrinh.online_auction.repository.product.ProductRepository;
 import com.taitrinh.online_auction.service.email.ProductEmailService;
 
 import lombok.RequiredArgsConstructor;

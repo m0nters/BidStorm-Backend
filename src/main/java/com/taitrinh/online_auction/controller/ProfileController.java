@@ -34,11 +34,11 @@ import com.taitrinh.online_auction.dto.profile.UpdateReviewRequest;
 import com.taitrinh.online_auction.dto.profile.UserProfileResponse;
 import com.taitrinh.online_auction.dto.profile.UserReviewsWithMetadataResponse;
 import com.taitrinh.online_auction.dto.profile.WonProductResponse;
-import com.taitrinh.online_auction.entity.UpgradeRequest;
-import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.entity.admin.UpgradeRequest;
+import com.taitrinh.online_auction.entity.auth.User;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.ProfileService;
-import com.taitrinh.online_auction.service.UpgradeRequestService;
+import com.taitrinh.online_auction.service.admin.UpgradeRequestService;
+import com.taitrinh.online_auction.service.profile.ProfileService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -17,6 +17,24 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.taitrinh.online_auction.dto.ErrorResponse;
 import com.taitrinh.online_auction.dto.ValidationError;
+import com.taitrinh.online_auction.exception.auth.AccountInactiveException;
+import com.taitrinh.online_auction.exception.auth.EmailAlreadyExistsException;
+import com.taitrinh.online_auction.exception.auth.EmailAlreadyVerifiedException;
+import com.taitrinh.online_auction.exception.auth.InvalidOtpException;
+import com.taitrinh.online_auction.exception.auth.InvalidRefreshTokenException;
+import com.taitrinh.online_auction.exception.auth.OtpRateLimitException;
+import com.taitrinh.online_auction.exception.bid.InvalidBidAmountException;
+import com.taitrinh.online_auction.exception.bid.UnauthorizedBidException;
+import com.taitrinh.online_auction.exception.comment.CommentNotFoundException;
+import com.taitrinh.online_auction.exception.comment.InvalidCommentStateException;
+import com.taitrinh.online_auction.exception.comment.UnauthorizedCommentActionException;
+import com.taitrinh.online_auction.exception.common.BadRequestException;
+import com.taitrinh.online_auction.exception.common.FileUploadException;
+import com.taitrinh.online_auction.exception.common.InvalidRecaptchaException;
+import com.taitrinh.online_auction.exception.common.ResourceNotFoundException;
+import com.taitrinh.online_auction.exception.order.ChatAccessDeniedException;
+import com.taitrinh.online_auction.exception.product.ProductEndedException;
+import com.taitrinh.online_auction.exception.product.UnauthorizedSellerException;
 
 import jakarta.validation.ConstraintViolationException;
 

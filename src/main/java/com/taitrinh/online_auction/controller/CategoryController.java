@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.category.CategoryResponse;
 import com.taitrinh.online_auction.dto.category.CreateCategoryRequest;
-import com.taitrinh.online_auction.service.CategoryService;
+import com.taitrinh.online_auction.service.product.CategoryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

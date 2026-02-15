@@ -16,7 +16,7 @@ import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.bid.BidRequest;
 import com.taitrinh.online_auction.dto.bid.BidResponse;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.BidService;
+import com.taitrinh.online_auction.service.bid.BidService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

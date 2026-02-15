@@ -13,7 +13,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
-import com.taitrinh.online_auction.service.OrderCompletionService;
+import com.taitrinh.online_auction.service.order.OrderCompletionService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

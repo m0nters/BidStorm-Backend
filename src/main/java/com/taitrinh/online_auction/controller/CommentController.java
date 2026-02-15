@@ -17,7 +17,7 @@ import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.comment.CommentResponse;
 import com.taitrinh.online_auction.dto.comment.CreateCommentRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.CommentService;
+import com.taitrinh.online_auction.service.comment.CommentService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.taitrinh.online_auction.dto.ApiResponse;
 import com.taitrinh.online_auction.dto.RoleResponse;
-import com.taitrinh.online_auction.entity.Role;
-import com.taitrinh.online_auction.repository.RoleRepository;
+import com.taitrinh.online_auction.entity.auth.Role;
+import com.taitrinh.online_auction.repository.auth.RoleRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

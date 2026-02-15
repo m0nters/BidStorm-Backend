@@ -24,8 +24,8 @@ import com.taitrinh.online_auction.dto.auth.RegisterRequest;
 import com.taitrinh.online_auction.dto.auth.ResetPasswordRequest;
 import com.taitrinh.online_auction.dto.request.GoogleAuthRequest;
 import com.taitrinh.online_auction.security.UserDetailsImpl;
-import com.taitrinh.online_auction.service.AuthService;
-import com.taitrinh.online_auction.service.OAuth2Service;
+import com.taitrinh.online_auction.service.auth.AuthService;
+import com.taitrinh.online_auction.service.auth.OAuth2Service;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -5,8 +5,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.taitrinh.online_auction.entity.User;
-import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.entity.auth.User;
+import com.taitrinh.online_auction.repository.auth.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 

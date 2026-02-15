@@ -2,7 +2,7 @@ package com.taitrinh.online_auction.dto.profile;
 
 import org.springframework.data.domain.Page;
 
-import com.taitrinh.online_auction.entity.User;
+import com.taitrinh.online_auction.entity.auth.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
