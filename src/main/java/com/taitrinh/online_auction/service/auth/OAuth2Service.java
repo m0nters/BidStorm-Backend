@@ -75,7 +75,7 @@ public class OAuth2Service {
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
 
         // Step 5: Generate JWT tokens
-        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId(), user.getRole().getName());
+        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
         String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
 
         // Step 6: Save refresh token

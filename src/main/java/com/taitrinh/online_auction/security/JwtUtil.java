@@ -43,11 +43,6 @@ public class JwtUtil {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
-    // Extract role from token
-    public String extractRole(String token) {
-        return extractClaim(token, claims -> claims.get("role", String.class));
-    }
-
     // Extract token type (access or refresh)
     public String extractTokenType(String token) {
         return extractClaim(token, claims -> claims.get("tokenType", String.class));
@@ -79,10 +74,9 @@ public class JwtUtil {
     }
 
     // Generate access token
-    public String generateAccessToken(UserDetails userDetails, Long userId, String role) {
+    public String generateAccessToken(UserDetails userDetails, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
-        claims.put("role", role);
         claims.put("tokenType", "access");
         return createToken(claims, userDetails.getUsername(), accessTokenExpiration);
     }

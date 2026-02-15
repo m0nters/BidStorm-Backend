@@ -123,7 +123,7 @@ public class AuthService {
         }
 
         // Generate tokens
-        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId(), user.getRole().getName());
+        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
         String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
 
         // Save refresh token to database
@@ -233,7 +233,7 @@ public class AuthService {
 
         // Generate new tokens
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
-        String newAccessToken = jwtUtil.generateAccessToken(userDetails, user.getId(), user.getRole().getName());
+        String newAccessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
         String newRefreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
 
         // TOKEN ROTATION: Revoke old token and link to new one
