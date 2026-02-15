@@ -191,7 +191,6 @@ public class ProductController {
         }
 
         @PostMapping
-        @PreAuthorize("hasRole('SELLER')")
         @Operation(summary = "[DEV] Create auction product (SELLER only)", description = "(For development only, for production, use /upload endpoint instead) Create a new auction product. Requires at least 3 images, one must be marked as primary. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<CreateProductResponse>> createProduct(
                         @Valid @RequestBody CreateProductRequest request,
@@ -203,7 +202,6 @@ public class ProductController {
         }
 
         @PostMapping("/upload")
-        @PreAuthorize("hasRole('SELLER')")
         @Operation(summary = "Create auction product with file uploads (SELLER only)", description = "Create a new auction product with direct file uploads. Accepts multipart/form-data with product data as JSON string and 3-10 image files (JPG/PNG/WEBP, max 5MB each). The first image will automatically be set as primary. Images are uploaded to AWS S3.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<CreateProductResponse>> createProductWithFileUpload(
                         @Parameter(description = "Product data (JSON string)", required = true) @RequestPart("productData") String productDataJson,
@@ -246,7 +244,6 @@ public class ProductController {
         }
 
         @PutMapping("/{id}/description")
-        @PreAuthorize("hasRole('SELLER')")
         @Operation(summary = "Update product description (SELLER only)", description = "Append additional description to existing product. Cannot replace existing description, only append. Seller ID is automatically extracted from authentication token.", security = @SecurityRequirement(name = "Bearer Authentication"))
         public ResponseEntity<ApiResponse<Void>> updateProductDescription(
                         @Parameter(description = "Product ID", example = "1") @PathVariable Long id,

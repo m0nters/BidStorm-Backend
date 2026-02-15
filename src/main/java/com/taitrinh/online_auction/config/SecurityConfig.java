@@ -74,7 +74,6 @@ public class SecurityConfig {
         static final String BID_CREATE = "/api/v1/products/*/bids";
         static final String BUY_NOW = "/api/v1/products/*/buy-now";
         static final String BIDDER_DELETE = "/api/v1/products/*/bidders/*";
-        static final String PROFILE = "/api/v1/profile/**";
 
         // Seller-only product endpoints
         static final String PRODUCTS_API = "/api/v1/products/**";
@@ -98,11 +97,10 @@ public class SecurityConfig {
                         // Public read-only endpoints (GET only)
                         .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_READ_ONLY).permitAll()
 
-                        // Authenticated user endpoints (must be before seller-only product rules)
+                        // Authenticated user endpoints
                         .requestMatchers(HttpMethod.POST, SecurityEndpoints.BID_CREATE).authenticated()
                         .requestMatchers(HttpMethod.POST, SecurityEndpoints.BUY_NOW).authenticated()
                         .requestMatchers(HttpMethod.DELETE, SecurityEndpoints.BIDDER_DELETE).authenticated()
-                        .requestMatchers(SecurityEndpoints.PROFILE).authenticated()
 
                         // Seller endpoints - require SELLER role
                         .requestMatchers(HttpMethod.POST, SecurityEndpoints.PRODUCTS_API).hasRole("SELLER")
