@@ -22,6 +22,7 @@ import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.BlockedBidderRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.service.email.BidEmailService;
 import com.taitrinh.online_auction.service.email.ProductEmailService;
 import com.taitrinh.online_auction.util.NameMaskingUtil;
 
@@ -39,7 +40,7 @@ public class BidService {
         private final BlockedBidderRepository blockedBidderRepository;
         private final BidMapper bidMapper;
         private final BidNotificationService notificationService;
-        private final EmailService emailService;
+        private final BidEmailService bidEmailService;
         private final ConfigService configService;
         private final ProductEmailService productEmailService;
 
@@ -300,7 +301,7 @@ public class BidService {
                 notificationService.notifyBidRejected(productId, bidderId, broadcastPrice, broadcastBidder);
 
                 // Send rejection email
-                emailService.sendBidRejectionEmail(rejectedBidder.getEmail(), rejectedBidder.getFullName(),
+                bidEmailService.sendBidRejectionEmail(rejectedBidder.getEmail(), rejectedBidder.getFullName(),
                                 product.getTitle(),
                                 product.getSlug());
 
@@ -337,7 +338,7 @@ public class BidService {
                         BigDecimal newPrice, User newHighestBidder, User previousHighestBidder) {
                 // Email to seller
                 if (product.getSeller() != null) {
-                        emailService.sendNewBidNotificationToSeller(
+                        bidEmailService.sendNewBidNotificationToSeller(
                                         product.getSeller().getEmail(),
                                         product.getSeller().getFullName(),
                                         product.getTitle(),
@@ -348,7 +349,7 @@ public class BidService {
                 }
 
                 // Email to new bidder (confirmation)
-                emailService.sendBidConfirmationToBidder(
+                bidEmailService.sendBidConfirmationToBidder(
                                 newBidder.getEmail(),
                                 newBidder.getFullName(),
                                 product.getTitle(),
@@ -361,7 +362,7 @@ public class BidService {
                 if (previousHighestBidder != null &&
                                 !previousHighestBidder.getId().equals(newHighestBidder.getId()) &&
                                 !previousHighestBidder.getId().equals(newBidder.getId())) {
-                        emailService.sendOutbidNotification(
+                        bidEmailService.sendOutbidNotification(
                                         previousHighestBidder.getEmail(),
                                         previousHighestBidder.getFullName(),
                                         product.getTitle(),
@@ -479,7 +480,7 @@ public class BidService {
 
                 // Email to previous highest bidder if exists
                 if (previousHighestBidder != null && !previousHighestBidder.getId().equals(winner.getId())) {
-                        emailService.sendOutbidNotification(
+                        bidEmailService.sendOutbidNotification(
                                         previousHighestBidder.getEmail(),
                                         previousHighestBidder.getFullName(),
                                         product.getTitle(),

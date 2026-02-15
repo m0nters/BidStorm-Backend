@@ -20,6 +20,7 @@ import com.taitrinh.online_auction.repository.BidHistoryRepository;
 import com.taitrinh.online_auction.repository.CommentRepository;
 import com.taitrinh.online_auction.repository.ProductRepository;
 import com.taitrinh.online_auction.repository.UserRepository;
+import com.taitrinh.online_auction.service.email.CommentEmailService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class CommentService {
     private final BidHistoryRepository bidHistoryRepository;
     private final CommentMapper commentMapper;
     private final CommentNotificationService notificationService;
-    private final EmailService emailService;
+    private final CommentEmailService commentEmailService;
 
     /**
      * Create a new comment (question or reply)
@@ -106,7 +107,7 @@ public class CommentService {
         if (parent == null) {
             // New question - send email to seller
             if (product.getSeller() != null && product.getSeller().getEmail() != null) {
-                emailService.sendNewQuestionToSeller(
+                commentEmailService.sendNewQuestionToSeller(
                         product.getSeller().getEmail(),
                         product.getSeller().getFullName(),
                         product.getTitle(),
@@ -133,7 +134,7 @@ public class CommentService {
 
                     if (isOriginalAsker) {
                         // Send personalized "your question was answered" email
-                        emailService.sendSellerReplyNotification(
+                        commentEmailService.sendSellerReplyNotification(
                                 asker.getEmail(),
                                 asker.getFullName(),
                                 product.getTitle(),
@@ -142,7 +143,7 @@ public class CommentService {
                                 savedComment.getId());
                     } else {
                         // Send general "new activity on product you're interested in" email
-                        emailService.sendProductActivityNotification(
+                        commentEmailService.sendProductActivityNotification(
                                 asker.getEmail(),
                                 asker.getFullName(),
                                 product.getTitle(),
@@ -165,7 +166,7 @@ public class CommentService {
                         !bidder.getId().equals(userId) &&
                         !emailedUserIds.contains(bidder.getId())) {
                     // Bidders who haven't asked questions get general activity notification
-                    emailService.sendProductActivityNotification(
+                    commentEmailService.sendProductActivityNotification(
                             bidder.getEmail(),
                             bidder.getFullName(),
                             product.getTitle(),
