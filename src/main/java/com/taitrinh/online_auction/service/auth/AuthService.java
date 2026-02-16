@@ -123,8 +123,8 @@ public class AuthService {
         }
 
         // Generate tokens
-        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
-        String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getId());
 
         // Save refresh token to database
         saveRefreshToken(user, refreshToken);
@@ -232,9 +232,8 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
 
         // Generate new tokens
-        UserDetailsImpl userDetails = new UserDetailsImpl(user);
-        String newAccessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
-        String newRefreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
+        String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
+        String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getId());
 
         // TOKEN ROTATION: Revoke old token and link to new one
         storedToken.revokeAndReplace(newRefreshToken);

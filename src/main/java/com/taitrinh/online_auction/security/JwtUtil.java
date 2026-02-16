@@ -74,19 +74,19 @@ public class JwtUtil {
     }
 
     // Generate access token
-    public String generateAccessToken(UserDetails userDetails, Long userId) {
+    public String generateAccessToken(String email, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("tokenType", "access");
-        return createToken(claims, userDetails.getUsername(), accessTokenExpiration);
+        return createToken(claims, email, accessTokenExpiration);
     }
 
     // Generate refresh token
-    public String generateRefreshToken(UserDetails userDetails, Long userId) {
+    public String generateRefreshToken(String email, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("tokenType", "refresh");
-        return createToken(claims, userDetails.getUsername(), refreshTokenExpiration);
+        return createToken(claims, email, refreshTokenExpiration);
     }
 
     // Create token

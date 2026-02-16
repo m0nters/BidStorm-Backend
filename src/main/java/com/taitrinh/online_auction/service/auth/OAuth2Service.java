@@ -23,7 +23,6 @@ import com.taitrinh.online_auction.repository.auth.RefreshTokenRepository;
 import com.taitrinh.online_auction.repository.auth.RoleRepository;
 import com.taitrinh.online_auction.repository.auth.UserRepository;
 import com.taitrinh.online_auction.security.JwtUtil;
-import com.taitrinh.online_auction.security.UserDetailsImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,14 +70,11 @@ public class OAuth2Service {
         User user = findOrCreateUser(payload);
         log.info("User authenticated: {} (ID: {})", user.getEmail(), user.getId());
 
-        // Step 4: Create UserDetails for JWT generation
-        UserDetailsImpl userDetails = new UserDetailsImpl(user);
+        // Step 4: Generate JWT tokens
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getId());
 
-        // Step 5: Generate JWT tokens
-        String accessToken = jwtUtil.generateAccessToken(userDetails, user.getId());
-        String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getId());
-
-        // Step 6: Save refresh token
+        // Step 5: Save refresh token
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .user(user)
                 .token(refreshToken)
@@ -86,7 +82,7 @@ public class OAuth2Service {
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
-        // Step 7: Build response with UserInfo
+        // Step 6: Build response with UserInfo
         LoginResponse.UserInfo userInfoResponse = LoginResponse.UserInfo.builder()
                 .id(user.getId())
                 .email(user.getEmail())
