@@ -12,13 +12,14 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.taitrinh.online_auction.dto.auth.AuthResponse;
-import com.taitrinh.online_auction.dto.auth.LoginResponse;
 import com.taitrinh.online_auction.entity.auth.RefreshToken;
 import com.taitrinh.online_auction.entity.auth.Role;
 import com.taitrinh.online_auction.entity.auth.User;
 import com.taitrinh.online_auction.enums.OAuthProvider;
 import com.taitrinh.online_auction.exception.common.BadRequestException;
 import com.taitrinh.online_auction.exception.common.ResourceNotFoundException;
+import com.taitrinh.online_auction.mapper.auth.AuthEntityMapper;
+import com.taitrinh.online_auction.mapper.auth.AuthResponseMapper;
 import com.taitrinh.online_auction.repository.auth.RefreshTokenRepository;
 import com.taitrinh.online_auction.repository.auth.RoleRepository;
 import com.taitrinh.online_auction.repository.auth.UserRepository;
@@ -36,6 +37,8 @@ public class OAuth2Service {
     private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtil jwtUtil;
+    private final AuthResponseMapper authResponseMapper;
+    private final AuthEntityMapper authEntityMapper;
 
     @Value("${google.oauth.client-id}")
     private String googleClientId;
@@ -75,30 +78,12 @@ public class OAuth2Service {
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getId());
 
         // Step 5: Save refresh token
-        RefreshToken refreshTokenEntity = RefreshToken.builder()
-                .user(user)
-                .token(refreshToken)
-                .expiresAt(ZonedDateTime.now().plus(Duration.ofMillis(refreshTokenExpiration)))
-                .build();
+        ZonedDateTime expiresAt = ZonedDateTime.now().plus(Duration.ofMillis(refreshTokenExpiration));
+        RefreshToken refreshTokenEntity = authEntityMapper.toRefreshToken(user, refreshToken, expiresAt);
         refreshTokenRepository.save(refreshTokenEntity);
 
         // Step 6: Build response with UserInfo
-        LoginResponse.UserInfo userInfoResponse = LoginResponse.UserInfo.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .role(user.getRole().getName())
-                .avatarUrl(user.getAvatarUrl())
-                .emailVerified(user.getEmailVerified())
-                .isActive(user.getIsActive())
-                .build();
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .user(userInfoResponse)
-                .build();
+        return authResponseMapper.toAuthResponse(user, accessToken, refreshToken);
     }
 
     /**
@@ -181,23 +166,11 @@ public class OAuth2Service {
                 .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại"));
 
         // Extract user info from payload
-        String email = payload.getEmail(); // always NOT NULL
-        String name = (String) payload.get("name"); // always NOT NULL
         String pictureUrl = (String) payload.get("picture"); // always NOT NULL (even if the user hasn't uploaded a
                                                              // profile picture before, Google provides a default one)
 
         // Create new user
-        User newUser = User.builder()
-                .email(email)
-                .fullName(name)
-                .avatarUrl(pictureUrl)
-                .oauthProvider(OAuthProvider.GOOGLE)
-                .oauthProviderId(payload.getSubject())
-                .emailVerified(true) // Google already verified the email
-                .role(bidderRole)
-                .isActive(true)
-                .passwordHash(null) // OAuth users don't have passwords
-                .build();
+        User newUser = authEntityMapper.toUserFromGoogle(payload, bidderRole, pictureUrl);
 
         User savedUser = userRepository.save(newUser);
         log.info("Created new user with ID: {}", savedUser.getId());

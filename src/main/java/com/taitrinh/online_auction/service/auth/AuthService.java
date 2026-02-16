@@ -31,6 +31,8 @@ import com.taitrinh.online_auction.exception.auth.InvalidOtpException;
 import com.taitrinh.online_auction.exception.auth.InvalidRefreshTokenException;
 import com.taitrinh.online_auction.exception.auth.OtpRateLimitException;
 import com.taitrinh.online_auction.exception.common.ResourceNotFoundException;
+import com.taitrinh.online_auction.mapper.auth.AuthEntityMapper;
+import com.taitrinh.online_auction.mapper.auth.AuthResponseMapper;
 import com.taitrinh.online_auction.repository.auth.EmailOtpRepository;
 import com.taitrinh.online_auction.repository.auth.RefreshTokenRepository;
 import com.taitrinh.online_auction.repository.auth.RoleRepository;
@@ -58,6 +60,8 @@ public class AuthService {
     private final RecaptchaService recaptchaService;
     private final AuthEmailService authEmailService;
     private final ApplicationContext applicationContext;
+    private final AuthResponseMapper authResponseMapper;
+    private final AuthEntityMapper authEntityMapper;
 
     @Value("${jwt.access-token-expiration}")
     private Long accessTokenExpiration;
@@ -88,17 +92,8 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("Role", 3));
 
         // Create user
-        User user = User.builder()
-                .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .address(request.getAddress())
-                .birthDate(request.getBirthDate())
-                .avatarUrl(defaultAvatarUrl)
-                .role(bidderRole)
-                .emailVerified(false)
-                .isActive(true)
-                .build();
+        String passwordHash = passwordEncoder.encode(request.getPassword());
+        User user = authEntityMapper.toUserFromRegistration(request, bidderRole, passwordHash, defaultAvatarUrl);
 
         userRepository.save(user);
 
@@ -130,21 +125,7 @@ public class AuthService {
         saveRefreshToken(user, refreshToken);
 
         // Build response
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(accessTokenExpiration / 1000) // Convert to seconds
-                .user(LoginResponse.UserInfo.builder()
-                        .id(user.getId())
-                        .email(user.getEmail())
-                        .fullName(user.getFullName())
-                        .role(user.getRole().getName())
-                        .avatarUrl(user.getAvatarUrl())
-                        .emailVerified(user.getEmailVerified())
-                        .isActive(user.getIsActive())
-                        .build())
-                .build();
+        return authResponseMapper.toLoginResponse(user, accessToken, refreshToken, accessTokenExpiration);
     }
 
     @Transactional
@@ -243,29 +224,12 @@ public class AuthService {
         log.info("Token rotated for user: {}. Old token revoked.", email);
 
         // Save new refresh token
-        RefreshToken newToken = RefreshToken.builder()
-                .token(newRefreshToken)
-                .user(user)
-                .expiresAt(ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000))
-                .build();
+        ZonedDateTime newTokenExpiresAt = ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000);
+        RefreshToken newToken = authEntityMapper.toRefreshToken(user, newRefreshToken, newTokenExpiresAt);
         refreshTokenRepository.save(newToken);
 
         // Build response with NEW refresh token
-        return LoginResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken) // Return NEW refresh token
-                .tokenType("Bearer")
-                .expiresIn(accessTokenExpiration / 1000)
-                .user(LoginResponse.UserInfo.builder()
-                        .id(user.getId())
-                        .email(user.getEmail())
-                        .fullName(user.getFullName())
-                        .role(user.getRole().getName())
-                        .avatarUrl(user.getAvatarUrl())
-                        .emailVerified(user.getEmailVerified())
-                        .isActive(user.getIsActive())
-                        .build())
-                .build();
+        return authResponseMapper.toLoginResponse(user, newAccessToken, newRefreshToken, accessTokenExpiration);
     }
 
     @Transactional
@@ -336,13 +300,8 @@ public class AuthService {
         String otpCode = String.format("%06d", random.nextInt(1000000));
 
         // Save OTP to database
-        EmailOtp otp = EmailOtp.builder()
-                .email(email)
-                .otpCode(otpCode)
-                .purpose(purpose)
-                .isUsed(false)
-                .expiresAt(ZonedDateTime.now().plusMinutes(otpExpirationMinutes))
-                .build();
+        ZonedDateTime otpExpiresAt = ZonedDateTime.now().plusMinutes(otpExpirationMinutes);
+        EmailOtp otp = authEntityMapper.toEmailOtp(email, otpCode, purpose, otpExpiresAt);
 
         emailOtpRepository.save(otp);
 
@@ -362,11 +321,8 @@ public class AuthService {
         log.info("Revoked existing refresh tokens for user: {}", user.getId());
 
         // Save new refresh token
-        RefreshToken refreshToken = RefreshToken.builder()
-                .token(token)
-                .user(user)
-                .expiresAt(ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000))
-                .build();
+        ZonedDateTime expiresAt = ZonedDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000);
+        RefreshToken refreshToken = authEntityMapper.toRefreshToken(user, token, expiresAt);
         refreshTokenRepository.save(refreshToken);
         log.info("Saved new refresh token for user: {}", user.getId());
     }
